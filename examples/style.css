@@ -1,0 +1,72 @@
+@CHARSET "UTF-8";
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Tahoma, Verdana, Arial, Helvetica, sans-serif;
+  font-size: 11px;
+  background: #EFEFEF;
+  color: #000000;
+  margin: 0px;
+  cursor: default;
+}
+
+option, optgroup {
+  font-style: normal;
+  padding-right: 6px;
+}
+
+/* Select tree */
+ul.select-tree {
+  padding: 0;
+  text-align: left;
+  color: #000;
+  font-weight: normal;
+  font-size: 1.0em;
+}
+
+ul.select-tree ul {
+  padding: 0;
+}
+
+ul.select-tree li {
+  list-style-type: none;
+  border: 1px solid #999;
+  margin-top: -1px;
+  padding: 1px;
+  padding-left: 3px;
+  background: #fff;
+  cursor: pointer;
+  margin-left: 0;
+}
+
+ul.select-tree li:hover {
+  background: #ccc;
+}
+
+ul.select-tree li.selected {
+  background: #666;
+  color: #fff;
+}
+
+ul.select-tree li.focused {
+  background: #ccc;
+}
+
+ul.select-tree li.drop {
+  background-image: url(images/arrow.png);
+  background-position: center right;
+  background-repeat: no-repeat;
+}
+
+ul.select-tree .highlight {
+  background: #ddd;
+}
+
+/* DOM Creator */
+.super-div {
+  border: 1px solid #f00;
+}
