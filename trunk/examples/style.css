@@ -19,6 +19,26 @@ option, optgroup {
   padding-right: 6px;
 }
 
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+td, th {
+  padding: 2px;
+}
+
+th {
+  text-align: right;
+}
+
+th .description {
+  display: block;
+  font-weight: normal;
+  font-size: 0.8em;
+  color: #999;
+}
+  
 /* Select tree */
 ul.select-tree {
   padding: 0;
@@ -64,6 +84,17 @@ ul.select-tree li.drop {
 
 ul.select-tree .highlight {
   background: #ddd;
+}
+
+.grippie-h {
+  border: 1px solid #999;
+  background: #CCC url(images/drag-n.gif) center center no-repeat;
+  height: 8px;
+  margin: 0;
+  border-top: 0;
+  cursor: n-resize;
+  margin-left: 0px;
+  margin-right: -4px;
 }
 
 /* DOM Creator */
