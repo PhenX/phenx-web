@@ -147,9 +147,69 @@ function $V (element, value, fire) {
  return;
 }
 
+Element.addMethods({
+  setResizable: function (element, options) {
+    if (!Prototype.Browser.IE) {
+    options = Object.extend({
+      step: 1
+    }, options);
+  
+    var staticOffset = null;
+    
+    // oGrippie is the draggable element
+    var oGrippie = new Element('div');
+    
+    // We remove the margin between the textarea and the grippie
+    element.style.marginBottom = '0';
+    
+    // grippie's class and style
+    oGrippie.addClassName('grippie-h');
+    oGrippie.setOpacity(0.5);
+    if (!element.visible()) {
+      oGrippie.hide();
+    }
+    
+    function startDrag(e) {
+      staticOffset = element.getHeight() - Event.pointerY(e); 
+      element.setOpacity(0.4);
+      document.onmousemove = performDrag;
+      document.onmouseup = endDrag;
+      return false;
+    }
+    
+    // When the mouse is pressed on the grippie, we begin the drag
+    oGrippie.onmousedown = startDrag;
+    element.insert({after: oGrippie});
+  
+    function performDrag(e) {
+      var h = null;
+      if (typeof options.step == 'string') {
+        var iStep = element.getStyle(options.step);
+        iStep = iStep.substr(0, iStep.length - 2);
+        
+        h = Math.max(iStep*2, staticOffset + Event.pointerY(e)) - Math.round(oGrippie.getHeight()/2);
+        h = Math.round(h / iStep)*iStep;
+      } else {
+        h = Math.max(32, staticOffset + Event.pointerY(e));
+      }
+      element.setStyle({height: h + 'px'});
+      return false;
+    }
+  
+    function endDrag(e) {
+      element.setStyle({opacity: 1});
+      document.onmousemove = null;
+      document.onmouseup = null;
+      return false;
+    }
+  }
+  }
+} );
+
 
 Element.addMethods('select', {
   buildTree: function (element, options) {
+    if (!Prototype.Browser.IE) {
     var select  = element; // DOM select
     var search  = null; // DOM text input
     var tree    = null; // DOM UL/LI tree representing the select/optgroup
@@ -434,6 +494,7 @@ Element.addMethods('select', {
     }
 
     select.onclick = tree.display;
+  }
   }
 });
 
