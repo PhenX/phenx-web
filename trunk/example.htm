@@ -1,0 +1,26 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <title>Prototype.Graphics</title>
+    <link rel="stylesheet" href="style.css" type="text/css" />
+    <script type="text/javascript" src="lib/prototype-1.6.0.2.js"></script>
+    <!--[if IE]>
+    <script type="text/javascript" src="lib/excanvas.js"></script>
+    <script type="text/javascript" src="lib/base64.js"></script>
+    <![endif]-->
+    <script type="text/javascript" src="lib/canvas2image.js"></script>
+    <script type="text/javascript" src="canvastext.js"></script>
+    <script type="text/javascript" src="graphics.js"></script>
+    
+    <script type="text/javascript">
+      document.observe('dom:loaded', function(){
+        var g = new $G();
+        $('test').insert(g.element);
+      });
+    </script>
+  </head>
+  <body>
+  <div id="test"></div>
+  </body>
+</html>
