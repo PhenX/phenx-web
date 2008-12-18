@@ -17,6 +17,7 @@
       document.observe('dom:loaded', function(){
         var g = new Prototype.Graphics();
         $('test').insert(g.element);
+        g.addLayer();
       });
     </script>
   </head>
