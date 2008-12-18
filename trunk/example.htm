@@ -14,14 +14,16 @@
     <script type="text/javascript" src="graphics.js"></script>
     
     <script type="text/javascript">
+      var g, layer;
       document.observe('dom:loaded', function(){
-        var g = new Prototype.Graphics();
+        g = new Prototype.Graphics({className: 'graphic', debug: true});
+        layer = g.addLayer();
         $('test').insert(g.element);
-        g.addLayer();
       });
     </script>
   </head>
   <body>
   <div id="test"></div>
+  <p style="text-align: center;">^^^^^^ There must be a Canvas up here !! ^^^^^^</p>
   </body>
 </html>
