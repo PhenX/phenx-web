@@ -4,18 +4,18 @@
     <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
     <title>Prototype.Graphics</title>
     <link rel="stylesheet" href="style.css" type="text/css" />
-    <script type="text/javascript" src="lib/prototype-1.6.0.2.js"></script>
+    <script type="text/javascript" src="lib/prototype.js"></script>
     <!--[if IE]>
     <script type="text/javascript" src="lib/excanvas.js"></script>
     <script type="text/javascript" src="lib/base64.js"></script>
     <![endif]-->
     <script type="text/javascript" src="lib/canvas2image.js"></script>
-    <script type="text/javascript" src="canvastext.js"></script>
+    <script type="text/javascript" src="lib/canvastext.js"></script>
     <script type="text/javascript" src="graphics.js"></script>
     
     <script type="text/javascript">
       document.observe('dom:loaded', function(){
-        var g = new $G();
+        var g = new Prototype.Graphics();
         $('test').insert(g.element);
       });
     </script>
