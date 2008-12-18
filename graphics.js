@@ -1,4 +1,4 @@
-var $G = Prototype.Graphics = Class.create({
+Prototype.Graphics = Class.create({
 	initialize: function(options){
 		this.options = Object.extend({
 			width: 400,
@@ -16,25 +16,26 @@ var $G = Prototype.Graphics = Class.create({
 		this.img      = new Element('img',{style:style, usemap:'#'+this.map.name, src:'pix.gif'});
 		this.element.insert(this.img).insert(this.map);
 		
-		this.layers.push(new $G.Layer(this));
+		// add the first layer
+		this.layers.push(new Prototype.Graphics.Layer(this));
 	},
 	_renderers: ['canvas','svg','vml'],
 	layers: []
 });
 
-var $G2d = $G.Point2D = {
+Prototype.Graphics.Point2D = {
 	x: null,
 	y: null,
 	toPolar: function(){}
 };
 
-var $Gpol = $G.PointPolar = {
+Prototype.Graphics.PointPolar = {
 	angle: null,
 	d: null,
 	to2D: function(){}
 };
 
-$G.Layer = Class.create({
+Prototype.Graphics.Layer = Class.create({
 	initialize: function(parent, options){
 		this.options = Object.extend(Object.extend({}, parent.options), options);
 		this.container = parent;
@@ -46,7 +47,7 @@ $G.Layer = Class.create({
 			this.ctx = $(window.G_vmlCanvasManager.initElement(this.ctx));
 		}
 		
-		this.groups.push(new $G.Group(this));
+		this.groups.push(new Prototype.Graphics.Group(this));
 		this.container.element.insert(this.canvas);
 	},
 	insert: function(area){
@@ -59,7 +60,7 @@ $G.Layer = Class.create({
 	}
 });
 
-$G.Group = Class.create({
+Prototype.Graphics.Group = Class.create({
 	initialize: function(parent, options){
   	this.options = Object.extend(Object.extend({}, parent.options), options);
   	this.parent = parent;
@@ -68,7 +69,7 @@ $G.Group = Class.create({
 	insert: this.parent.insert
 });
 
-$G.Curve = {
+Prototype.Graphics.Curve = {
 	Line: {
 		start: null, // start
 		end: null // end
@@ -84,14 +85,14 @@ $G.Curve = {
   Text: {}
 };
 
-$G.Shape = {
+Prototype.Graphics.Shape = {
 	Interface: Class.create({ // the shape interface
 		group: {},
 		_area: {/*html map area*/},
 		coords: [],
 		
 		initialize: function(coords, group){
-			this.group = group ? group.addShape(this) : new $G.Group(this);
+			this.group = group ? group.addShape(this) : new Prototype.Graphics.Group(this);
 			this.group.parent.insert(this._area);
 		},
 		
@@ -118,14 +119,20 @@ $G.Shape = {
 		remove: function(){},
 	  
 	  /** Event handling */
-	  observe: getArea().observe,
-	  stopObserving: getArea().stopObserving,
-	  fire: getArea().fire
+	  observe: function(){
+			return this.getArea().observe.curry(this, $A(arguments));
+		},
+	  stopObserving: function(){
+			return this.getArea().stopObserving.curry(this, $A(arguments));
+		},
+	  fire: function(){
+			return this.getArea().fire.curry(this, $A(arguments));
+		}
 	})
 };
 
-Object.extend($G.Shape, {
-	PolyLine: Class.create($G.Shape.Interface, {
+Object.extend(Prototype.Graphics.Shape, {
+	PolyLine: Class.create(Prototype.Graphics.Shape.Interface, {
     initialize: function($super) {
 			$super();
     	//this._area.writeAttribute('shape', 'poly');
@@ -133,19 +140,19 @@ Object.extend($G.Shape, {
   	points: [],
   	addPoint: function(p){}
   }),
-  Rect: Class.create($G.Shape.Interface, {
+  Rect: Class.create(Prototype.Graphics.Shape.Interface, {
   	initialize: function($super) {
 			$super();
   		//this._area.writeAttribute('shape', 'rect');
   	}
   }),
-  Circle: Class.create($G.Shape.Interface, {
+  Circle: Class.create(Prototype.Graphics.Shape.Interface, {
   	initialize: function($super) {
 			$super();
   		//this._area.writeAttribute('circle', 'circle');
   	}
   }),
-  Oval: Class.create($G.Shape.Interface, {
+  Oval: Class.create(Prototype.Graphics.Shape.Interface, {
     initialize: function($super) {
 			$super();
     	//this._area.writeAttribute('shape', 'poly');
