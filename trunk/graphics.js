@@ -19,36 +19,46 @@ Prototype.Graphics = Class.create({
 		// add the first layer
 		this.layers.push(new Prototype.Graphics.Layer(this));
 	},
+	addLayer: function(options) {
+		this.layers.push(new Prototype.Graphics.Layer(this, options));
+		return this.layers.last();
+	},
 	_renderers: ['canvas','svg','vml'],
 	layers: []
 });
 
-Prototype.Graphics.Point2D = {
+Prototype.Graphics.Coord2D = {
 	x: null,
 	y: null,
 	toPolar: function(){}
 };
 
-Prototype.Graphics.PointPolar = {
+Prototype.Graphics.CoordPolar = {
 	angle: null,
 	d: null,
 	to2D: function(){}
 };
 
 Prototype.Graphics.Layer = Class.create({
-	initialize: function(parent, options){
-		this.options = Object.extend(Object.extend({}, parent.options), options);
-		this.container = parent;
+	initialize: function(container, options){
+		this.options = Object.extend(Object.extend({}, container.options), options);
+		this.container = container;
 		
-		this.canvas = new Element('canvas',{style:'position:absolute;top:0;left:0;margin:0;height:'+this.options.height+'px;width:'+this.options.width+'px;'});
+		this.canvas = new Element('canvas', {
+			style: 'position:absolute;top:0;left:0;margin:0;width:'+this.options.width+'px;height:'+this.options.height+'px;',
+			width: this.options.width,
+			height: this.options.height
+		});
+		this.container.element.insert(this.canvas);
+		
 		this.id = this.canvas.identify();
-		this.ctx = this.canvas.getContext('2d');
-		if (Prototype.IE) {
-			this.ctx = $(window.G_vmlCanvasManager.initElement(this.ctx));
+		
+		if (Prototype.Browser.IE) {
+			this.canvas = $(window.G_vmlCanvasManager.initElement(this.canvas));
 		}
+		this.ctx = this.canvas.getContext('2d');
 		
 		this.groups.push(new Prototype.Graphics.Group(this));
-		this.container.element.insert(this.canvas);
 	},
 	insert: function(area){
 		return this.container.map.insert(area);
@@ -56,7 +66,6 @@ Prototype.Graphics.Layer = Class.create({
 	groups: [],
 	addShape: function(shape, group){
 		group = group || this.groups.last();
-		
 	}
 });
 
@@ -81,8 +90,7 @@ Prototype.Graphics.Curve = {
   },
   Bezier: {
   	
-  },
-  Text: {}
+  }
 };
 
 Prototype.Graphics.Shape = {
@@ -156,6 +164,12 @@ Object.extend(Prototype.Graphics.Shape, {
     initialize: function($super) {
 			$super();
     	//this._area.writeAttribute('shape', 'poly');
+    }
+  }),
+  Text: Class.create(Prototype.Graphics.Shape.Interface, {
+    initialize: function($super) {
+			$super();
+    	//this._area.writeAttribute('shape', 'rect');
     }
   })
 });
