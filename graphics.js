@@ -4,40 +4,52 @@ Prototype.Graphics = Class.create({
 			width: 400,
 			height: 250,
 			className: null,
-			renderer: this._renderers.first()
+			renderer: this._renderers.first(),
+      debug: false
 		}, options);
 		
 		var dimensions = 'height:'+this.options.height+'px;width:'+this.options.width+'px;',
 		    style = 'position:absolute;top:0;left:0;margin:0;border:none;'+dimensions;
-		
-		this.element  = new Element('div',{style:'position:relative;'+dimensions, className:this.options.className});
+
 		this.map      = new Element('map',{style:style});
 		this.map.name = this.map.identify();
-		this.img      = new Element('img',{style:style, usemap:'#'+this.map.name, src:'pix.gif'});
+    this.img      = new Element('img',{style:style, usemap:'#'+this.map.name, src:'pix.gif'});
+		
+    this.element  = new Element('div',{style:'position:relative;'+dimensions, className:this.options.className});
 		this.element.insert(this.img).insert(this.map);
 		
 		// add the first layer
-		this.layers.push(new Prototype.Graphics.Layer(this));
+		this.addLayer(this);
 	},
 	addLayer: function(options) {
 		this.layers.push(new Prototype.Graphics.Layer(this, options));
 		return this.layers.last();
 	},
+  draw: function() {
+    console.debug('Prototype.Graphics', 'draw');
+    this.layers.invoke('draw');
+  },
 	_renderers: ['canvas','svg','vml'],
 	layers: []
 });
 
-Prototype.Graphics.Coord2D = {
-	x: null,
-	y: null,
-	toPolar: function(){}
-};
+Prototype.Graphics.Coord2D = Class.create({
+  initialize: function(x, y) {
+    this.x = x;
+    this.y = y;
+  },
+  toPolar: function(){}
+});
 
-Prototype.Graphics.CoordPolar = {
-	angle: null,
-	d: null,
-	to2D: function(){}
-};
+Prototype.Graphics.CoordPolar = Class.create({
+  initialize: function(angle, d) {
+    this.angle = angle;
+    this.d = d;
+  },
+  to2D: function(){
+    return new $G.Point2D(this.d * Math.cos(this.angle), this.d * Math.sin(this.angle));
+  }
+});
 
 Prototype.Graphics.Layer = Class.create({
 	initialize: function(container, options){
@@ -57,7 +69,12 @@ Prototype.Graphics.Layer = Class.create({
 			this.canvas = $(window.G_vmlCanvasManager.initElement(this.canvas));
 		}
 		this.ctx = this.canvas.getContext('2d');
-		
+		CanvasText.enable(this.ctx);
+
+    // debug
+    if (container.options.debug)
+      this.ctx.drawText('Hi !! I\'m a canvas :), my ID is ['+this.id+']', 10, 15+15*container.layers.length, {color:'#666666'});
+
 		this.groups.push(new Prototype.Graphics.Group(this));
 	},
 	insert: function(area){
@@ -66,16 +83,26 @@ Prototype.Graphics.Layer = Class.create({
 	groups: [],
 	addShape: function(shape, group){
 		group = group || this.groups.last();
-	}
+	},
+  draw: function() {
+    console.debug('Prototype.Graphics.Layer', 'draw');
+    this.groups.invoke('draw');
+  }
 });
 
 Prototype.Graphics.Group = Class.create({
 	initialize: function(parent, options){
-  	this.options = Object.extend(Object.extend({}, parent.options), options);
+  	this.options = Object.extend({}, options);
   	this.parent = parent;
+    this.children = [];
   },
-	shapes: [],
-	insert: this.parent.insert
+  draw: function() {
+    console.debug('Prototype.Graphics.Group', 'draw');
+    this.children.invoke('draw');
+  },
+	insert: function(child) {
+    return this.parent.insert(child);
+  }
 });
 
 Prototype.Graphics.Curve = {
@@ -95,21 +122,24 @@ Prototype.Graphics.Curve = {
 
 Prototype.Graphics.Shape = {
 	Interface: Class.create({ // the shape interface
-		group: {},
-		_area: {/*html map area*/},
-		coords: [],
-		
 		initialize: function(coords, group){
 			this.group = group ? group.addShape(this) : new Prototype.Graphics.Group(this);
-			this.group.parent.insert(this._area);
+			this.group.parent.insert(this.area);
+      
+      this.coords = coords || [];
+			
+  	  this.getArea();
+      this.observe = this.area.observe.bind(this.area);
+      this.stopObserving = this.area.stopObserving.bind(this.area);
+      this.fire = this.area.fire.bind(this.area);
 		},
 		
 		getArea: function(){
-			if (!this._area) {
-  			this._area = new Element('area', {style:'border:none;',coords:''});
-  			this._area.graphicShape = this;
+			if (!this.area) {
+  			this.area = new Element('area', {style:'border:none;', coords:''});
+  			this.area.graphicShape = this;
 			}
-			return this._area;
+			return this.area;
 		},
 		
 	  transform: function(){},
@@ -117,30 +147,19 @@ Prototype.Graphics.Shape = {
 	  clear: function(){},
 	  getArea: function(){},
 	  
-	  /** Like HTML Element, but doesn't apply to the map area */
+	  /** Like HTML Element */
 		setStyle: function(){},
 		setOpacity: function(){},
 		hide: function(){},
 		show: function(){},
 		toggle: function(){},
 		visible: function(){},
-		remove: function(){},
-	  
-	  /** Event handling */
-	  observe: function(){
-			return this.getArea().observe.curry(this, $A(arguments));
-		},
-	  stopObserving: function(){
-			return this.getArea().stopObserving.curry(this, $A(arguments));
-		},
-	  fire: function(){
-			return this.getArea().fire.curry(this, $A(arguments));
-		}
+		remove: function(){}
 	})
 };
 
 Object.extend(Prototype.Graphics.Shape, {
-	PolyLine: Class.create(Prototype.Graphics.Shape.Interface, {
+	Polygon: Class.create(Prototype.Graphics.Shape.Interface, {
     initialize: function($super) {
 			$super();
     	//this._area.writeAttribute('shape', 'poly');
