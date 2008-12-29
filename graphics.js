@@ -1,4 +1,4 @@
-Prototype.Graphics = Class.create({
+var $G = Prototype.Graphics = Class.create({
 	initialize: function(options){
 		this.options = Object.extend({
 			width: 400,
@@ -11,58 +11,127 @@ Prototype.Graphics = Class.create({
 		var dimensions = 'height:'+this.options.height+'px;width:'+this.options.width+'px;',
 		    style = 'position:absolute;top:0;left:0;margin:0;border:none;'+dimensions;
 
-		this.map      = new Element('map',{style:style});
+		this.map      = new Element('map',{style:dimensions});
 		this.map.name = this.map.identify();
     this.img      = new Element('img',{style:style, usemap:'#'+this.map.name, src:'pix.gif'});
+    this.img.onmousedown = this.img.onmouseup = this.img.onclick = function(){return false};
 		
     this.element  = new Element('div',{style:'position:relative;'+dimensions, className:this.options.className});
 		this.element.insert(this.img).insert(this.map);
 		
+		/*var p = new $G.CoordPolar(Math.PI/4, Math.SQRT2);
+		console.debug(p, p.to2D().toPolar());*/
+		
 		// add the first layer
 		this.addLayer(this);
+		
+		/*$H($G.Shape).each(function(pair){
+			if (pair.key !== 'Interface') {
+  			this['draw'+pair.key] = (function (coords, group) {
+  				group = group || this.layers.last().children.last();
+  				return new $G.Shape[pair.key](coords, group);
+  			}).bind(this);
+			}
+		}, this);*/
 	},
 	addLayer: function(options) {
-		this.layers.push(new Prototype.Graphics.Layer(this, options));
-		return this.layers.last();
+		var layer = new $G.Layer(this, options);
+		this.layers.push(layer);
+		return layer;
 	},
   draw: function() {
-    console.debug('Prototype.Graphics', 'draw');
+    console.info('$G', 'draw');
     this.layers.invoke('draw');
+  },
+  getLayer: function(name){
+  	if (!name) return this.layers.last();
+  	return this.layers.find(function(l){return l.name == name});
   },
 	_renderers: ['canvas','svg','vml'],
 	layers: []
 });
 
-Prototype.Graphics.Coord2D = Class.create({
+$G.Coord2D = Class.create({
   initialize: function(x, y) {
     this.x = x;
     this.y = y;
   },
-  toPolar: function(){}
-});
-
-Prototype.Graphics.CoordPolar = Class.create({
-  initialize: function(angle, d) {
-    this.angle = angle;
-    this.d = d;
+  toPolar: function(){
+  	var angle, r = Math.sqrt(this.x * this.x + this.y * this.y);
+  	if (r == 0) return new $G.CoordPolar(0, 0);
+  	if (this.x > 0) {
+  		angle = Math.atan(this.y / this.x);
+  		if (this.y < 0) angle += Math.PI * 2;
+  	}
+  	else if (this.x == 0) {
+  		angle = Math.PI / 2;
+  		if (this.y < 0) angle +=  Math.PI;
+  	}
+  	else { // x < 0
+  		angle = Math.atan(this.y / this.x) + Math.PI;
+  	}
+  	return new $G.CoordPolar(angle, r);
   },
   to2D: function(){
-    return new $G.Point2D(this.d * Math.cos(this.angle), this.d * Math.sin(this.angle));
+  	return this;
+  },
+  toString: function(){
+  	return this.x+','+this.y;
   }
 });
 
-Prototype.Graphics.Layer = Class.create({
-	initialize: function(container, options){
-		this.options = Object.extend(Object.extend({}, container.options), options);
+$G.CoordPolar = Class.create({
+  initialize: function(angle, r) {
+    this.angle = angle;
+    this.r = r;
+  },
+  to2D: function(){
+    return new $G.Coord2D(this.r * Math.cos(this.angle), this.r * Math.sin(this.angle));
+  },
+  toPolar: function(){
+  	return this;
+  }
+});
+
+$G.Group = Class.create({
+	initialize: function(options){
+  	this.options = Object.extend({}, options);
+  },
+  parent: null,
+  children: [],
+  draw: function(){
+    console.info('$G.Group', 'draw');
+    this.children.invoke('draw');
+  },
+	insert: function(element){
+  	if (element instanceof $G.Shape.Interface || element instanceof $G.Group){
+  		element.parent = this;
+  		this.children.push(element);
+  		console.info('$G.Group.insert()');
+  	}
+		return this;
+	},
+	getAncestor: function(){
+		return this.container || this.parent.getAncestor();
+	},
+	getCanvas: function(){
+		return this.parent.getCanvas();
+	}
+});
+
+$G.Layer = Class.create($G.Group, {
+	initialize: function($super, container, options){
+		$super(options);
+		
 		this.container = container;
+		this.options = Object.extend(this.container.options, this.options);
 		
 		this.canvas = new Element('canvas', {
 			style: 'position:absolute;top:0;left:0;margin:0;width:'+this.options.width+'px;height:'+this.options.height+'px;',
 			width: this.options.width,
 			height: this.options.height
 		});
-		this.container.element.insert(this.canvas);
-		
+		this.container.img.insert({before:this.canvas});
 		this.id = this.canvas.identify();
 		
 		if (Prototype.Browser.IE) {
@@ -72,40 +141,26 @@ Prototype.Graphics.Layer = Class.create({
 		CanvasText.enable(this.ctx);
 
     // debug
-    if (container.options.debug)
-      this.ctx.drawText('Hi !! I\'m a canvas :), my ID is ['+this.id+']', 10, 15+15*container.layers.length, {color:'#666666'});
-
-		this.groups.push(new Prototype.Graphics.Group(this));
+    if (this.options.debug)
+      this.ctx.drawText('Hi !! I\'m a canvas :), my ID is ['+this.id+']', 10, 15+15*this.container.layers.length, {color:'#000000'});
 	},
-	insert: function(area){
-		return this.container.map.insert(area);
-	},
-	groups: [],
-	addShape: function(shape, group){
-		group = group || this.groups.last();
-	},
-  draw: function() {
-    console.debug('Prototype.Graphics.Layer', 'draw');
-    this.groups.invoke('draw');
-  }
+	name: null,
+	getCanvas: function(){
+		return this.ctx;
+	}
 });
 
-Prototype.Graphics.Group = Class.create({
-	initialize: function(parent, options){
-  	this.options = Object.extend({}, options);
-  	this.parent = parent;
-    this.children = [];
-  },
-  draw: function() {
-    console.debug('Prototype.Graphics.Group', 'draw');
-    this.children.invoke('draw');
-  },
-	insert: function(child) {
-    return this.parent.insert(child);
-  }
-});
+$G.Style = {
+	bindToRenderer: function(style, renderer) {
+  	renderer.strokeStyle = Prototype.Color.parse(style.strokeColor).toString();
+  	renderer.fillStyle = Prototype.Color.parse(style.fillColor).toString();
+  	renderer.lineWidth = style.lineWidth;
+  	renderer.lineCap = style.lineCap;
+  	renderer.lineJoin = style.lineJoin;
+	}
+}
 
-Prototype.Graphics.Curve = {
+$G.Curve = {
 	Line: {
 		start: null, // start
 		end: null // end
@@ -120,32 +175,72 @@ Prototype.Graphics.Curve = {
   }
 };
 
-Prototype.Graphics.Shape = {
+$G.Shape = {
 	Interface: Class.create({ // the shape interface
-		initialize: function(coords, group){
-			this.group = group ? group.addShape(this) : new Prototype.Graphics.Group(this);
-			this.group.parent.insert(this.area);
-      
+		initialize: function(coords, style){
       this.coords = coords || [];
-			
-  	  this.getArea();
-      this.observe = this.area.observe.bind(this.area);
-      this.stopObserving = this.area.stopObserving.bind(this.area);
-      this.fire = this.area.fire.bind(this.area);
+
+      this.style = Object.extend({
+      	fillColor: 'rgba(255,0,0,0.5)', //fillStyle
+      	fillGradient: null,             //fillStyle
+      	strokeColor: 'rgba(0,0,0,1)',   //strokeStyle
+      	strokeGradient: null,           //strokeStyle
+      	lineWidth: 1,
+      	lineCap: 'butt',
+      	lineJoin: 'miter'
+      }, style);
+      
+      this.transformation = {rotate:null, translate:null, scale:null};
 		},
 		
-		getArea: function(){
+		constructArea: function(){
 			if (!this.area) {
-  			this.area = new Element('area', {style:'border:none;', coords:''});
+  			this.area = new Element('area', {style:'cursor:pointer;', 'shape':this.areaShape, coords:this.buildAreaCoords(), href:'#1'});
   			this.area.graphicShape = this;
+    	  this.getAncestor().map.insert(this.area);
 			}
 			return this.area;
 		},
 		
-	  transform: function(){},
-	  draw: function(){},
+		getAncestor: function(){
+			return this.ancestor || (this.ancestor = this.parent.getAncestor());
+		},
+		
+		getCanvas: function(){
+			return this.canvas || (this.canvas = this.parent.getCanvas());
+		},
+		
+		buildAreaCoords: function(){},
+		
+	  /** Events **/
+    observe: function(eventName, handler){
+    	return this.constructArea().observe(eventName, handler);
+    },
+    stopObserving: function(eventName, handler){
+    	return this.constructArea().stopObserving(eventName, handler);
+    },
+    fire: function(eventName, memo){
+    	return this.constructArea().fire(eventName, memo);
+    },
+		
+		area: null,
+		canvas: null,
+		ancestor: null,
+		
+	  transform: function(t){
+    	this.transformation = Object.extend(this.transformation, t);
+    },
+	  makeTransform: function(){
+    	var ctx = this.getCanvas(), 
+    	    t = this.transformation;
+    	if (t.scale)     ctx.scale(t.scale[0],t.scale[1]);
+    	if (t.rotate)    ctx.rotate(t.rotate);
+    	if (t.translate) ctx.translate(t.translate[0], t.translate[1]);
+    },
+	  draw: function(){
+    	$G.Style.bindToRenderer(this.style, this.getCanvas());
+    },
 	  clear: function(){},
-	  getArea: function(){},
 	  
 	  /** Like HTML Element */
 		setStyle: function(){},
@@ -158,37 +253,80 @@ Prototype.Graphics.Shape = {
 	})
 };
 
-Object.extend(Prototype.Graphics.Shape, {
-	Polygon: Class.create(Prototype.Graphics.Shape.Interface, {
-    initialize: function($super) {
+Object.extend($G.Shape, {
+	Polygon: Class.create($G.Shape.Interface, {
+    areaShape: 'poly',
+  	addPoint: function(p){
+    	this.points.push(p);
+    	return p;
+    }
+  }),
+  Rect: Class.create($G.Shape.Interface, {
+    initialize: function($super, coords){ /* [start{Point}, end{Point}] */
+  		this.areaShape = 'rect';
+  	  return $super(coords);
+  	},
+		buildAreaCoords: function(){
+  		var p = this.coords[0].to2D(), 
+  		    d = this.coords[1].to2D();
+			return p.x+','+p.y+','+p.x+d.x+','+p.y+d.y;
+		},
+  	draw: function($super){
+  		var s = this.coords[0].to2D(), 
+	        e = this.coords[1].to2D(),
+	        ctx = this.getCanvas(),
+	        style = this.style;
+  		
+  		ctx.save();
+  		
+  		$super();
+  		ctx.translate(s.x, s.y);
+  		this.makeTransform();
+  		
+  		if (style.strokeColor) ctx.strokeRect(0, 0, e.x, e.y);
+  		if (style.fillColor)   ctx.fillRect(0, 0, e.x, e.y);
+
+  		ctx.restore();
+  	}
+  }),
+  Circle: Class.create($G.Shape.Interface, {
+    initialize: function($super, coords){ /* [center{Point}, radius{float}] */
+  	  return $super(coords);
+  	},
+		buildAreaCoords: function(){
+  		var center = this.coords[0].to2D();
+			return center.toString()+','+this.coords[1];
+		},
+  	draw: function($super){
+			var center = this.coords[0].to2D(),
+			    ctx = this.getCanvas(),
+	        style = this.style;
+			
+			ctx.save();
 			$super();
-    	//this._area.writeAttribute('shape', 'poly');
+  		ctx.translate(center.x, center.y);
+  		this.makeTransform();
+  		
+			ctx.beginPath();
+			ctx.arc(0, 0, this.coords[1], 0, Math.PI*2, true);
+			
+			if (style.strokeColor) ctx.stroke();
+  		if (style.fillColor)   ctx.fill();
+
+			ctx.restore();
+  	},
+  	areaShape: 'circle'
+  }),
+  Oval: Class.create($G.Shape.Interface, {
+    initialize: function($super, coords){
+		  return $super(coords);
     },
-  	points: [],
-  	addPoint: function(p){}
+  	areaShape: 'poly'
   }),
-  Rect: Class.create(Prototype.Graphics.Shape.Interface, {
-  	initialize: function($super) {
-			$super();
-  		//this._area.writeAttribute('shape', 'rect');
-  	}
-  }),
-  Circle: Class.create(Prototype.Graphics.Shape.Interface, {
-  	initialize: function($super) {
-			$super();
-  		//this._area.writeAttribute('circle', 'circle');
-  	}
-  }),
-  Oval: Class.create(Prototype.Graphics.Shape.Interface, {
-    initialize: function($super) {
-			$super();
-    	//this._area.writeAttribute('shape', 'poly');
-    }
-  }),
-  Text: Class.create(Prototype.Graphics.Shape.Interface, {
-    initialize: function($super) {
-			$super();
-    	//this._area.writeAttribute('shape', 'rect');
-    }
+  Text: Class.create($G.Shape.Interface, {
+    initialize: function($super, coords){
+  	  return $super(coords);
+    },
+  	areaShape: 'rect'
   })
-});
+});                        
