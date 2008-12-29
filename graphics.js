@@ -96,9 +96,9 @@ $G.CoordPolar = Class.create({
 $G.Group = Class.create({
 	initialize: function(options){
   	this.options = Object.extend({}, options);
+  	this.children = [];
+  	this.parent = null;
   },
-  parent: null,
-  children: [],
   draw: function(){
     console.info('$G.Group', 'draw');
     this.children.invoke('draw');
@@ -125,6 +125,7 @@ $G.Layer = Class.create($G.Group, {
 		
 		this.container = container;
 		this.options = Object.extend(this.container.options, this.options);
+		this.name = '';
 		
 		this.canvas = new Element('canvas', {
 			style: 'position:absolute;top:0;left:0;margin:0;width:'+this.options.width+'px;height:'+this.options.height+'px;',
@@ -144,7 +145,6 @@ $G.Layer = Class.create($G.Group, {
     if (this.options.debug)
       this.ctx.drawText('Hi !! I\'m a canvas :), my ID is ['+this.id+']', 10, 15+15*this.container.layers.length, {color:'#000000'});
 	},
-	name: null,
 	getCanvas: function(){
 		return this.ctx;
 	}
@@ -179,7 +179,11 @@ $G.Shape = {
 	Interface: Class.create({ // the shape interface
 		initialize: function(coords, style){
       this.coords = coords || [];
-
+  		this.area = null;
+  		this.canvas = null;
+  		this.ancestor = null;
+      this.transformation = {rotate:null, translate:null, scale:null};
+      
       this.style = Object.extend({
       	fillColor: 'rgba(255,0,0,0.5)', //fillStyle
       	fillGradient: null,             //fillStyle
@@ -189,8 +193,6 @@ $G.Shape = {
       	lineCap: 'butt',
       	lineJoin: 'miter'
       }, style);
-      
-      this.transformation = {rotate:null, translate:null, scale:null};
 		},
 		
 		constructArea: function(){
@@ -222,11 +224,6 @@ $G.Shape = {
     fire: function(eventName, memo){
     	return this.constructArea().fire(eventName, memo);
     },
-		
-		area: null,
-		canvas: null,
-		ancestor: null,
-		
 	  transform: function(t){
     	this.transformation = Object.extend(this.transformation, t);
     },
@@ -238,6 +235,7 @@ $G.Shape = {
     	if (t.translate) ctx.translate(t.translate[0], t.translate[1]);
     },
 	  draw: function(){
+    	console.info('$G.Shape', 'draw');
     	$G.Style.bindToRenderer(this.style, this.getCanvas());
     },
 	  clear: function(){},
