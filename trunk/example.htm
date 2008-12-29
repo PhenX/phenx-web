@@ -11,19 +11,27 @@
     <![endif]-->
     <script type="text/javascript" src="lib/canvas2image.js"></script>
     <script type="text/javascript" src="lib/canvastext.js"></script>
+    <script type="text/javascript" src="color.js"></script>
     <script type="text/javascript" src="graphics.js"></script>
     
     <script type="text/javascript">
-      var g, layer;
+      var g, layer, circle, rect;
       document.observe('dom:loaded', function(){
-        g = new Prototype.Graphics({className: 'graphic', debug: true});
+        g = new $G({className: 'graphic', debug: true});
         layer = g.addLayer();
         $('test').insert(g.element);
+        circle = new $G.Shape.Circle([new $G.Coord2D(20,15), 18]);
+        rect = new $G.Shape.Rect([new $G.Coord2D(20.5,15.5), new $G.Coord2D(50,30)]);
+        g.getLayer().insert(circle);
+        g.getLayer().insert(rect);
+        rect.transform({rotate: 0.1, translate:[10,10]});
+        circle.observe('click', function(){alert('toto')});
+        
+        g.draw();
       });
     </script>
   </head>
   <body>
   <div id="test"></div>
-  <p style="text-align: center;">^^^^^^ There must be a Canvas up here !! ^^^^^^</p>
   </body>
 </html>

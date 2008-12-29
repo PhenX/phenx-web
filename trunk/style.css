@@ -58,6 +58,14 @@ pre{
 	margin:5px 0;
 }
 
+area {
+	cursor: pointer;
+}
+
+/*map {
+	background: #555500;
+}*/
+
 pre code{
 	background-color: transparent;
 	display:block;
