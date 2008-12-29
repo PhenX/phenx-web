@@ -19,20 +19,8 @@ var $G = Prototype.Graphics = Class.create({
     this.element  = new Element('div',{style:'position:relative;'+dimensions, className:this.options.className});
 		this.element.insert(this.img).insert(this.map);
 		
-		/*var p = new $G.CoordPolar(Math.PI/4, Math.SQRT2);
-		console.debug(p, p.to2D().toPolar());*/
-		
 		// add the first layer
 		this.addLayer(this);
-		
-		/*$H($G.Shape).each(function(pair){
-			if (pair.key !== 'Interface') {
-  			this['draw'+pair.key] = (function (coords, group) {
-  				group = group || this.layers.last().children.last();
-  				return new $G.Shape[pair.key](coords, group);
-  			}).bind(this);
-			}
-		}, this);*/
 	},
 	addLayer: function(options) {
 		var layer = new $G.Layer(this, options);
@@ -152,8 +140,8 @@ $G.Layer = Class.create($G.Group, {
 
 $G.Style = {
 	bindToRenderer: function(style, renderer) {
-  	renderer.strokeStyle = Prototype.Color.parse(style.strokeColor).toString();
-  	renderer.fillStyle = Prototype.Color.parse(style.fillColor).toString();
+    renderer.fillStyle = Prototype.Color.parse(style.fillColor || 'rgba(0,0,0,0)').toString();
+  	renderer.strokeStyle = Prototype.Color.parse(style.strokeColor || 'rgba(0,0,0,0)').toString();
   	renderer.lineWidth = style.lineWidth;
   	renderer.lineCap = style.lineCap;
   	renderer.lineJoin = style.lineJoin;
@@ -182,10 +170,10 @@ $G.Shape = {
   		this.area = null;
   		this.canvas = null;
   		this.ancestor = null;
-      this.transformation = {rotate:null, translate:null, scale:null};
+      this.transformation = [];
       
       this.style = Object.extend({
-      	fillColor: 'rgba(255,0,0,0.5)', //fillStyle
+      	fillColor: null, //fillStyle
       	fillGradient: null,             //fillStyle
       	strokeColor: 'rgba(0,0,0,1)',   //strokeStyle
       	strokeGradient: null,           //strokeStyle
@@ -198,7 +186,8 @@ $G.Shape = {
 		constructArea: function(){
 			if (!this.area) {
   			this.area = new Element('area', {style:'cursor:pointer;', 'shape':this.areaShape, coords:this.buildAreaCoords(), href:'#1'});
-  			this.area.graphicShape = this;
+  			this.area.onmousedown = this.area.onmouseup = this.area.onclick = function(){return false};
+        this.area.graphicShape = this;
     	  this.getAncestor().map.insert(this.area);
 			}
 			return this.area;
@@ -216,24 +205,40 @@ $G.Shape = {
 		
 	  /** Events **/
     observe: function(eventName, handler){
-    	return this.constructArea().observe(eventName, handler);
+    	this.constructArea().observe(eventName, handler);
+      return this;
     },
     stopObserving: function(eventName, handler){
-    	return this.constructArea().stopObserving(eventName, handler);
+    	this.constructArea().stopObserving(eventName, handler);
+      return this;
     },
     fire: function(eventName, memo){
-    	return this.constructArea().fire(eventName, memo);
+    	this.constructArea().fire(eventName, memo);
+      return this;
     },
-	  transform: function(t){
-    	this.transformation = Object.extend(this.transformation, t);
+    
+    /** Transformations **/
+    scale: function(x, y) {
+      this.transformation.push(['scale', x, y || x]);
+      return this;
     },
-	  makeTransform: function(){
-    	var ctx = this.getCanvas(), 
-    	    t = this.transformation;
-    	if (t.scale)     ctx.scale(t.scale[0],t.scale[1]);
-    	if (t.rotate)    ctx.rotate(t.rotate);
-    	if (t.translate) ctx.translate(t.translate[0], t.translate[1]);
+    rotate: function(angle) {
+      this.transformation.push(['rotate', angle, null]);
+      return this;
     },
+    translate: function(x, y) {
+      this.transformation.push(['translate', x, y || x]);
+      return this;
+    },
+	  applyTransform: function(){
+    	var i, ctx = this.getCanvas(), t, ts = this.transformation;
+      for(i = ts.length-1; i > -1; --i) {
+        t = ts[i];
+        ctx[t[0]](t[1], t[2]);
+      }
+    },
+    
+    
 	  draw: function(){
     	console.info('$G.Shape', 'draw');
     	$G.Style.bindToRenderer(this.style, this.getCanvas());
@@ -253,16 +258,19 @@ $G.Shape = {
 
 Object.extend($G.Shape, {
 	Polygon: Class.create($G.Shape.Interface, {
-    areaShape: 'poly',
+    initialize: function($super, coords, style){ /* [p1{Point|Curve}, p2{Point|Curve} ... pn{Point|Curve}] */
+      this.areaShape = 'poly';
+      return $super(coords, style);
+    },
   	addPoint: function(p){
-    	this.points.push(p);
-    	return p;
+    	this.coords.push(p);
+    	return this;
     }
   }),
   Rect: Class.create($G.Shape.Interface, {
-    initialize: function($super, coords){ /* [start{Point}, end{Point}] */
-  		this.areaShape = 'rect';
-  	  return $super(coords);
+    initialize: function($super, coords, style){ /* [start{Point}, end{Point}] */
+  		$super(coords, style);
+      this.areaShape = 'rect';
   	},
 		buildAreaCoords: function(){
   		var p = this.coords[0].to2D(), 
@@ -279,7 +287,7 @@ Object.extend($G.Shape, {
   		
   		$super();
   		ctx.translate(s.x, s.y);
-  		this.makeTransform();
+  		this.applyTransform();
   		
   		if (style.strokeColor) ctx.strokeRect(0, 0, e.x, e.y);
   		if (style.fillColor)   ctx.fillRect(0, 0, e.x, e.y);
@@ -288,8 +296,9 @@ Object.extend($G.Shape, {
   	}
   }),
   Circle: Class.create($G.Shape.Interface, {
-    initialize: function($super, coords){ /* [center{Point}, radius{float}] */
-  	  return $super(coords);
+    initialize: function($super, coords, style){ /* [center{Point}, radius{float}] */
+  	  $super(coords, style);
+      this.areaShape = 'circle';
   	},
 		buildAreaCoords: function(){
   		var center = this.coords[0].to2D();
@@ -303,7 +312,7 @@ Object.extend($G.Shape, {
 			ctx.save();
 			$super();
   		ctx.translate(center.x, center.y);
-  		this.makeTransform();
+  		this.applyTransform();
   		
 			ctx.beginPath();
 			ctx.arc(0, 0, this.coords[1], 0, Math.PI*2, true);
@@ -312,19 +321,18 @@ Object.extend($G.Shape, {
   		if (style.fillColor)   ctx.fill();
 
 			ctx.restore();
-  	},
-  	areaShape: 'circle'
+  	}
   }),
   Oval: Class.create($G.Shape.Interface, {
-    initialize: function($super, coords){
-		  return $super(coords);
+    initialize: function($super, coords, style){ /* [p1{Point|Curve}, p2{Point|Curve} ... pn{Point|Curve}] */
+      $super(coords, style);
+      this.areaShape = 'poly';
     },
-  	areaShape: 'poly'
   }),
   Text: Class.create($G.Shape.Interface, {
-    initialize: function($super, coords){
-  	  return $super(coords);
+    initialize: function($super, coords, style){ /* [p1{Point|Curve}, p2{Point|Curve} ... pn{Point|Curve}] */
+      $super(coords, style);
+      this.areaShape = 'rect';
     },
-  	areaShape: 'rect'
   })
 });                        
