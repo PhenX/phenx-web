@@ -1,19 +1,17 @@
 Element.addMethods('area', {
-	toPolyArea: function(element, coords) {
+	toPolyArea: function(element, coords, origin) {
 	  element = $(element);
-		switch(element.shape) {
-  		case 'poly': return element;
-  		case 'rect':
-  		case 'circle':
-  			element.shape = 'poly';
-  			var i, str = [];
-  			for(i = 0; i < coords.length; i++) {
-  				str.push(coords[i].join(','));
-  			}
-  			
-  			element.coords = str.join(',');
+	  origin = origin || [0, 0];
+	  
+		var i, str = [];
+		for(i = 0; i < coords.length; i++) {
+			str.push(Math.floor(coords[i][0]+origin[0])+','+Math.floor(coords[i][1]+origin[1]));
 		}
-		return element;
+		
+		return element.writeAttribute({
+			'coords': str.join(','),
+			'shape': 'poly'
+		});
 	}
 });
 
@@ -191,7 +189,7 @@ $G.Shape = {
   		this.ancestor = null;
       this.transformation = [];
       this.origin = [this.coords[0].to2D().x, this.coords[0].to2D().y];
-      this._points = null;
+      this.points = [];
       
       this.style = Object.extend({
       	fillColor: null, //fillStyle
@@ -206,13 +204,11 @@ $G.Shape = {
 		
 		constructArea: function(){
 			if (!this.area) {
-  			this.area = new Element('area', {style:'cursor:pointer;', 'shape':this.areaShape, coords:this.buildAreaCoords(), href:'#1'});
+  			this.area = new Element('area', {style:'cursor:pointer;', href:'#1', shape:'poly'});
+  			this.area.toPolyArea(this.calculatePoints(), this.origin);
   			this.area.onmousedown = this.area.onmouseup = this.area.onclick = function(){return false};
         this.area.graphicShape = this;
     	  this.getAncestor().map.insert(this.area);
-			}
-			if (this._points) {
-				this.area.toPolyArea(this._points);
 			}
 			return this.area;
 		},
@@ -222,11 +218,8 @@ $G.Shape = {
 		},
 		
 		getCanvas: function(){
-			console.debug(this.parent.getCanvas());
 			return this.canvas || (this.canvas = this.parent.getCanvas());
 		},
-		
-		buildAreaCoords: function(){},
 		calculatePoints: function(){},
 		
 	  /** Events **/
@@ -256,25 +249,28 @@ $G.Shape = {
       this.transformation.push(['translate', x, y]);
       return this;
     },
-	  applyTransform: function(){
-    	var i, ctx = this.getCanvas(), t, ts = this.transformation;
-    	this.calculatePoints();
+    applyTransform: function(){
+    	var i, t,
+    	    ctx = this.getCanvas(), 
+    	    ts = this.transformation;
     	
       for(i = ts.length-1; i > -1; --i) {
         t = ts[i];
+        
         ctx[t[0]](t[1], t[2]);
+        
+        console.debug(this.points);
+        console.debug(this.origin);
+        
+        if (t[0] == 'translate')
+        	$G.Coords.translate([this.origin], t[1], t[2]);
+        else 
+        	$G.Coords[t[0]](this.points, t[1], t[2]);
+        
+        console.debug(this.points);
+        console.debug(this.origin);
       }
-    },
-    
-    translatePoints: function(x, y, points) {
-      var i, p;
-      points = points || this._points;
-      for (i = points.length-1; i > -1; --i) {
-      	p = points[i];
-      	p[0] += x;
-      	p[1] += y;
-      }
-      return points;
+      this.area.toPolyArea(this.points, this.origin);
     },
 	  draw: function(){
     	console.info('$G.Shape', 'draw');
@@ -298,8 +294,7 @@ $G.Shape = {
 Object.extend($G.Shape, {
 	Polyline: Class.create($G.Shape.Interface, {
     initialize: function($super, coords, style){ /* [p1{Point|Curve}, p2{Point|Curve} ... pn{Point|Curve}] */
-      this.areaShape = 'poly';
-      return $super(coords, style);
+      $super(coords, style);
     },
   	addLine: function(p){
     	this.coords.push(p);
@@ -309,17 +304,10 @@ Object.extend($G.Shape, {
   Rect: Class.create($G.Shape.Interface, {
     initialize: function($super, coords, style){ /* [start{Point}, end{Point}] */
   		$super(coords, style);
-      this.areaShape = 'rect';
   	},
-		buildAreaCoords: function(){
-  		var o = this.origin, 
-  		    d = this.coords[1].to2D();
-			return o[0]+','+o[1]+','+o[0]+d.x+','+o[1]+d.y;
-		},
-		calculatePoints: function() {
-			if (this._points) return this._points;
+		calculatePoints: function(){
   		var d = this.coords[1].to2D();
-  		return this._points = [[0, 0], [0, d.y], [d.x, d.y], [d.x, 0]];
+  		return this.points = [[0, 0], [0, d.y], [d.x, d.y], [d.x, 0]];
 		},
   	draw: function($super){
   		var e = this.coords[1].to2D(),
@@ -338,11 +326,16 @@ Object.extend($G.Shape, {
   Circle: Class.create($G.Shape.Interface, {
     initialize: function($super, coords, style){ /* [center{Point}, radius{float}] */
   	  $super(coords, style);
-      this.areaShape = 'circle';
   	},
-		buildAreaCoords: function(){
-			return this.origin.join(',')+','+this.coords[1];
-		},
+  	calculatePoints: function() {
+  		var i, points = [], p = new $G.CoordPolar(0, this.coords[1]), p2d;
+  		for (i = 100; i > -1; --i) {
+  			p.angle += Math.PI/50;
+  			p2d = p.to2D();
+  			points.push([p2d.x, p2d.y]);
+  		}
+  		return this.points = points;
+  	},
   	draw: function($super){
 			var ctx = this.getCanvas(),
 	        style = this.style;
@@ -362,13 +355,11 @@ Object.extend($G.Shape, {
   Oval: Class.create($G.Shape.Interface, {
     initialize: function($super, coords, style){ /* [p1{Point|Curve}, p2{Point|Curve} ... pn{Point|Curve}] */
       $super(coords, style);
-      this.areaShape = 'poly';
     }
   }),
   Text: Class.create($G.Shape.Interface, {
     initialize: function($super, coords, style){ /* [p1{Point|Curve}, p2{Point|Curve} ... pn{Point|Curve}] */
       $super(coords, style);
-      this.areaShape = 'rect';
     }
   })
 });
