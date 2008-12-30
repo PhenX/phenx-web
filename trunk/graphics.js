@@ -335,4 +335,34 @@ Object.extend($G.Shape, {
       this.areaShape = 'rect';
     },
   })
-});                        
+});
+
+
+$G.Coords = {
+  translate: function(coords, x, y) {
+    var i;
+    for (i = coords.length-1; i > -1; --i) {
+      coords[i][0] += x;
+      coords[i][1] += y;
+    }
+    return coords;
+  },
+  scale: function(coords, x, y) {
+    var i;
+    y = y || x;
+    for (i = coords.length-1; i > -1; --i) {
+      coords[i][0] *= x;
+      coords[i][1] *= y;
+    }
+    return coords;
+  },
+  rotate: function(coords, angle) {
+    var i, polar;
+    for (i = coords.length-1; i > -1; --i) {
+      polar = new $G.Coord2D(coords[i][0], coords[i][1]).toPolar();
+      coords[i][0] = polar.r * Math.cos(angle);
+      coords[i][1] = polar.r * Math.sin(angle);
+    }
+    return coords;
+  }
+}
