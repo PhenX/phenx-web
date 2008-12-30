@@ -23,10 +23,10 @@
         g = new $G({className: 'graphic', debug: false});
         layer = g.addLayer();
         $('test').insert(g.element);
-        circle = new $G.Shape.Circle([new $G.Coord2D(90,80), 50], style);
+        circle = new $G.Shape.Circle([new $G.Coord2D(90,80), 50], style)
+        .translate(50, 20);
         rect = new $G.Shape.Rect([new $G.Coord2D(120,70), new $G.Coord2D(180,120)], style2)
-                     .scale(0.9, 0.4)
-                     .rotate(Math.PI/4);
+        .translate(50, 20).scale(0.8);
         
         g.getLayer().insert(circle);
         g.getLayer().insert(rect);
