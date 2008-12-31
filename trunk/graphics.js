@@ -45,7 +45,6 @@ var $G = Prototype.Graphics = Class.create({
 		return layer;
 	},
   draw: function() {
-    console.info('$G', 'draw');
     this.layers.invoke('draw');
   },
   getLayer: function(name){
@@ -98,6 +97,13 @@ $G.CoordPolar = Class.create({
   }
 });
 
+/*var i, p1, p2;
+for (i = 0; i < 4*Math.PI; i += Math.PI / 8) {
+	p1 = new $G.CoordPolar(i, 20).to2D().toPolar();
+	p2 = new $G.CoordPolar(i, 20);
+	console.debug(p1.x == p2.x && p1.y == p2.y);
+}*/
+
 $G.Group = Class.create({
 	initialize: function(options){
   	this.options = Object.extend({}, options);
@@ -105,19 +111,20 @@ $G.Group = Class.create({
   	this.parent = null;
   },
   draw: function(){
-    console.info('$G.Group', 'draw');
     this.children.invoke('draw');
   },
 	insert: function(element){
   	if (element instanceof $G.Shape.Interface || element instanceof $G.Group){
   		element.parent = this;
   		this.children.push(element);
-  		console.info('$G.Group.insert()');
+  		if (element instanceof $G.Shape.Interface) {
+  			element.constructArea(false);
+  		}
   	}
 		return this;
 	},
-	getAncestor: function(){
-		return this.container || this.parent.getAncestor();
+	getLayer: function(){
+		return this.container || this.parent.getLayer();
 	},
 	getCanvas: function(){
 		return this.parent.getCanvas();
@@ -152,6 +159,9 @@ $G.Layer = Class.create($G.Group, {
 	},
 	getCanvas: function(){
 		return this.ctx;
+	},
+	getLayer: function(){
+		return this;
 	}
 });
 
@@ -186,10 +196,12 @@ $G.Shape = {
       this.coords = coords || [];
   		this.area = null;
   		this.canvas = null;
-  		this.ancestor = null;
+  		this.layer = null;
       this.transformation = [];
-      this.origin = [this.coords[0].to2D().x, this.coords[0].to2D().y];
       this.points = [];
+      
+      var p2d = this.coords[0].to2D();
+      this.origin = [p2d.x, p2d.y];
       
       this.style = Object.extend({
       	fillColor: null, //fillStyle
@@ -202,19 +214,31 @@ $G.Shape = {
       }, style);
 		},
 		
-		constructArea: function(){
+		constructArea: function(reactive){
 			if (!this.area) {
-  			this.area = new Element('area', {style:'cursor:pointer;', href:'#1', shape:'poly'});
+  			this.area = new Element('area', {shape:'poly'});
   			this.area.toPolyArea(this.calculatePoints(), this.origin);
   			this.area.onmousedown = this.area.onmouseup = this.area.onclick = function(){return false};
         this.area.graphicShape = this;
-    	  this.getAncestor().map.insert(this.area);
+    	  this.getLayer().container.map.insert({top: this.area});
+			}
+			if (reactive === true || Object.isUndefined(reactive)) {
+				this.area.writeAttribute({
+					style: 'cursor:pointer;', 
+					href: '#1'
+				});
+			}
+			else if (reactive === false) {
+				this.area.writeAttribute({
+					style: 'cursor:auto;', 
+					href: null
+				});
 			}
 			return this.area;
 		},
 		
-		getAncestor: function(){
-			return this.ancestor || (this.ancestor = this.parent.getAncestor());
+		getLayer: function(){
+			return this.layer || (this.layer = this.parent.getLayer());
 		},
 		
 		getCanvas: function(){
@@ -224,7 +248,7 @@ $G.Shape = {
 		
 	  /** Events **/
     observe: function(eventName, handler){
-    	this.constructArea().observe(eventName, handler);
+    	this.constructArea(true).observe(eventName, handler);
       return this;
     },
     stopObserving: function(eventName, handler){
@@ -249,31 +273,26 @@ $G.Shape = {
       this.transformation.push(['translate', x, y]);
       return this;
     },
+    // @todo: do it with a transformation matrix
     applyTransform: function(){
-    	var i, t,
+    	var i, tC, tA,
     	    ctx = this.getCanvas(), 
     	    ts = this.transformation;
-    	
+
       for(i = ts.length-1; i > -1; --i) {
-        t = ts[i];
+        tC = ts[i];
+        tA = ts[ts.length-1-i];
         
-        ctx[t[0]](t[1], t[2]);
-        
-        console.debug(this.points);
-        console.debug(this.origin);
-        
-        if (t[0] == 'translate')
-        	$G.Coords.translate([this.origin], t[1], t[2]);
+        ctx[tC[0]](tC[1], tC[2]);
+
+        if (tA[0] == 'translate')
+        	$G.Coords.translate([this.origin], tA[1], tA[2]);
         else 
-        	$G.Coords[t[0]](this.points, t[1], t[2]);
-        
-        console.debug(this.points);
-        console.debug(this.origin);
+        	$G.Coords[tA[0]](this.points, tA[1], tA[2]);
       }
       this.area.toPolyArea(this.points, this.origin);
     },
 	  draw: function(){
-    	console.info('$G.Shape', 'draw');
     	$G.Style.bindToRenderer(this.style, this.getCanvas());
     	this.getCanvas().translate(this.origin[0], this.origin[1]);
     	this.applyTransform();
@@ -293,9 +312,40 @@ $G.Shape = {
 
 Object.extend($G.Shape, {
 	Polyline: Class.create($G.Shape.Interface, {
-    initialize: function($super, coords, style){ /* [p1{Point|Curve}, p2{Point|Curve} ... pn{Point|Curve}] */
+    initialize: function($super, coords, style){ /* [O{Point}, p1{Point|Curve}, p2{Point|Curve} ... pn{Point|Curve}] */
       $super(coords, style);
     },
+		calculatePoints: function(){
+  		var i, p;
+  		this.points = [];
+  		for(i = 1; i < this.coords.length; i++) {
+  			p = this.coords[i].to2D();
+  			this.points.push([p.x, p.y]);
+  		}
+  		console.debug(this.points);
+  		return this.points;
+		},
+  	draw: function($super){
+  		var i, 
+  		    p = this.coords[1].to2D(), 
+  		    ctx = this.getCanvas(),
+	        style = this.style;
+  		
+  		ctx.save();
+  		$super();
+
+  		ctx.moveTo(p.x, p.y);
+  		for(i = 2; i < this.coords.length; i++) {
+  			p = this.coords[i].to2D();
+  			ctx.lineTo(p.x, p.y);
+  		}
+  		ctx.closePath();
+  		
+  		if (style.strokeColor) ctx.stroke();
+  		if (style.fillColor)   ctx.fill();
+
+  		ctx.restore();
+  	},
   	addLine: function(p){
     	this.coords.push(p);
     	return this;
@@ -306,19 +356,21 @@ Object.extend($G.Shape, {
   		$super(coords, style);
   	},
 		calculatePoints: function(){
-  		var d = this.coords[1].to2D();
-  		return this.points = [[0, 0], [0, d.y], [d.x, d.y], [d.x, 0]];
+  		var w = this.coords[1],
+  		    h = this.coords[2];
+  		return this.points = [[0, 0], [0, h], [w, h], [w, 0]];
 		},
   	draw: function($super){
-  		var e = this.coords[1].to2D(),
+  		var w = this.coords[1],
+	        h = this.coords[2],
 	        ctx = this.getCanvas(),
 	        style = this.style;
   		
   		ctx.save();
   		$super();
   		
-  		if (style.strokeColor) ctx.strokeRect(0, 0, e.x, e.y);
-  		if (style.fillColor)   ctx.fillRect(0, 0, e.x, e.y);
+  		if (style.strokeColor) ctx.strokeRect(0, 0, w, h);
+  		if (style.fillColor)   ctx.fillRect(0, 0, w, h);
 
   		ctx.restore();
   	}
@@ -328,9 +380,9 @@ Object.extend($G.Shape, {
   	  $super(coords, style);
   	},
   	calculatePoints: function() {
-  		var i, points = [], p = new $G.CoordPolar(0, this.coords[1]), p2d;
-  		for (i = 100; i > -1; --i) {
-  			p.angle += Math.PI/50;
+  		var i, steps = 100, points = [], p = new $G.CoordPolar(0, this.coords[1]), p2d;
+  		for (i = steps; i > -1; --i) {
+  			p.angle += Math.PI*2/steps;
   			p2d = p.to2D();
   			points.push([p2d.x, p2d.y]);
   		}
@@ -387,8 +439,10 @@ $G.Coords = {
     var i, polar;
     for (i = coords.length-1; i > -1; --i) {
       polar = new $G.Coord2D(coords[i][0], coords[i][1]).toPolar();
-      coords[i][0] = polar.r * Math.cos(angle);
-      coords[i][1] = polar.r * Math.sin(angle);
+      polar.angle += angle;
+      polar = polar.to2D();
+      coords[i][0] = polar.x;
+      coords[i][1] = polar.y;
     }
     return coords;
   }
