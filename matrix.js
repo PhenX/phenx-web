@@ -2,6 +2,11 @@ Prototype.Matrix = Class.create({
   initialize: function() {
     this.m = this.getIdentity();
   },
+  setCoords: function(x, y, z) {
+  	this.m[0][0] = x;
+  	this.m[1][1] = y;
+  	this.m[2][2] = z;
+  },
   getIdentity: function() {
     return [
       [1, 0, 0],
