@@ -97,13 +97,6 @@ $G.CoordPolar = Class.create({
   }
 });
 
-/*var i, p1, p2;
-for (i = 0; i < 4*Math.PI; i += Math.PI / 8) {
-	p1 = new $G.CoordPolar(i, 20).to2D().toPolar();
-	p2 = new $G.CoordPolar(i, 20);
-	console.debug(p1.x == p2.x && p1.y == p2.y);
-}*/
-
 $G.Group = Class.create({
 	initialize: function(options){
   	this.options = Object.extend({}, options);
@@ -304,7 +297,6 @@ Object.extend($G.Shape, {
   			p = this.coords[i].to2D();
   			this.points.push([p.x, p.y]);
   		}
-  		console.debug(this.points);
   		return this.points;
 		},
   	draw: function($super){
