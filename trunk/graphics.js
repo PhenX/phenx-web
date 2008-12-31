@@ -117,9 +117,6 @@ $G.Group = Class.create({
   	if (element instanceof $G.Shape.Interface || element instanceof $G.Group){
   		element.parent = this;
   		this.children.push(element);
-  		if (element instanceof $G.Shape.Interface) {
-  			element.constructArea(false);
-  		}
   	}
 		return this;
 	},
@@ -214,25 +211,13 @@ $G.Shape = {
       }, style);
 		},
 		
-		constructArea: function(reactive){
+		constructArea: function(){
 			if (!this.area) {
-  			this.area = new Element('area', {shape:'poly'});
+  			this.area = new Element('area', {shape:'poly', style:'cursor:pointer;', href: '#1'});
   			this.area.toPolyArea(this.calculatePoints(), this.origin);
   			this.area.onmousedown = this.area.onmouseup = this.area.onclick = function(){return false};
         this.area.graphicShape = this;
-    	  this.getLayer().container.map.insert({top: this.area});
-			}
-			if (reactive === true || Object.isUndefined(reactive)) {
-				this.area.writeAttribute({
-					style: 'cursor:pointer;', 
-					href: '#1'
-				});
-			}
-			else if (reactive === false) {
-				this.area.writeAttribute({
-					style: 'cursor:auto;', 
-					href: null
-				});
+    	  this.getLayer().container.map.insert(this.area);
 			}
 			return this.area;
 		},
@@ -248,7 +233,7 @@ $G.Shape = {
 		
 	  /** Events **/
     observe: function(eventName, handler){
-    	this.constructArea(true).observe(eventName, handler);
+    	this.constructArea().observe(eventName, handler);
       return this;
     },
     stopObserving: function(eventName, handler){
@@ -312,9 +297,6 @@ $G.Shape = {
 
 Object.extend($G.Shape, {
 	Polyline: Class.create($G.Shape.Interface, {
-    initialize: function($super, coords, style){ /* [O{Point}, p1{Point|Curve}, p2{Point|Curve} ... pn{Point|Curve}] */
-      $super(coords, style);
-    },
 		calculatePoints: function(){
   		var i, p;
   		this.points = [];
@@ -341,8 +323,8 @@ Object.extend($G.Shape, {
   		}
   		ctx.closePath();
   		
-  		if (style.strokeColor) ctx.stroke();
   		if (style.fillColor)   ctx.fill();
+  		if (style.strokeColor) ctx.stroke();
 
   		ctx.restore();
   	},
@@ -352,9 +334,6 @@ Object.extend($G.Shape, {
     }
   }),
   Rect: Class.create($G.Shape.Interface, {
-    initialize: function($super, coords, style){ /* [start{Point}, end{Point}] */
-  		$super(coords, style);
-  	},
 		calculatePoints: function(){
   		var w = this.coords[1],
   		    h = this.coords[2];
@@ -369,16 +348,14 @@ Object.extend($G.Shape, {
   		ctx.save();
   		$super();
   		
-  		if (style.strokeColor) ctx.strokeRect(0, 0, w, h);
   		if (style.fillColor)   ctx.fillRect(0, 0, w, h);
+  		if (style.strokeColor) ctx.strokeRect(0, 0, w, h);
+  		
 
   		ctx.restore();
   	}
   }),
   Circle: Class.create($G.Shape.Interface, {
-    initialize: function($super, coords, style){ /* [center{Point}, radius{float}] */
-  	  $super(coords, style);
-  	},
   	calculatePoints: function() {
   		var i, steps = 100, points = [], p = new $G.CoordPolar(0, this.coords[1]), p2d;
   		for (i = steps; i > -1; --i) {
@@ -398,21 +375,15 @@ Object.extend($G.Shape, {
 			ctx.beginPath();
 			ctx.arc(0, 0, this.coords[1], 0, Math.PI*2, true);
 			
+			if (style.fillColor)   ctx.fill();
 			if (style.strokeColor) ctx.stroke();
-  		if (style.fillColor)   ctx.fill();
 
 			ctx.restore();
   	}
   }),
   Oval: Class.create($G.Shape.Interface, {
-    initialize: function($super, coords, style){ /* [p1{Point|Curve}, p2{Point|Curve} ... pn{Point|Curve}] */
-      $super(coords, style);
-    }
   }),
   Text: Class.create($G.Shape.Interface, {
-    initialize: function($super, coords, style){ /* [p1{Point|Curve}, p2{Point|Curve} ... pn{Point|Curve}] */
-      $super(coords, style);
-    }
   })
 });
 
