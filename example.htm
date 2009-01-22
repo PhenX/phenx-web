@@ -17,25 +17,30 @@
     
     <script type="text/javascript">
       var g, layer, circle, rect, poly,
-        style = {fillColor: 'rgba(0,150,0,0.6)', lineWidth: 2},
-        style2 = {fillColor: 'rgba(255,0,0,0.2)', lineWidth: 4};
+        style = {fillColor: 'rgba(0,50,150,0.6)', lineWidth: 5},
+        style2 = {fillColor: 'rgba(64,0,160,0.5)', strokeColor: 'rgb(0,127,0)', lineWidth: 10, lineJoin: 'round'};
+        style3 = {strokeColor: 'rgb(255,0,0)', lineWidth: 2};
+        
       document.observe('dom:loaded', function(){
         g = new $G({className: 'graphic', debug: false});
-        layer = g.addLayer();
         $('test').insert(g.element);
-        circle = new $G.Shape.Circle([new $G.Coord2D(90,80), 50], style).scale(4,0.3).rotate(Math.PI/4);
-        rect = new $G.Shape.Rect([new $G.Coord2D(120,70), 180, 120], style2)
-               .scale(0.5,0.9).rotate(0.1).scale(2,1.5);
-
-        poly = new $G.Shape.Polyline([new $G.Coord2D(140,30), new $G.Coord2D(140,30), new $G.Coord2D(190,80), new $G.Coord2D(150,80), new $G.Coord2D(140,90)], style);
+		
+        circle = new $G.Shape.Circle(new $G.Coord2D(90,80), 50).setStyle(style3).scale(2,0.3).rotate(Math.PI/4);
+        rect = new $G.Shape.Rect(new $G.Coord2D(120,70), 180, 120).setStyle(style2).scale(0.5,0.9).rotate(0.1).scale(2,1.5);
+        poly = new $G.Shape.Polyline([140,30], [140,30], [190,80], [150,80], [140,90]).setStyle(style);
         
-        g.getLayer().insert(circle).insert(rect).insert(poly);
+        var l = g.getLayer().insert(rect).insert(circle).insert(poly);
 
         circle.observe('click', function(){alert('Hello world !! I\'m a circle')});
-        rect.observe('click', function(){alert('Hello world !! I\'m a rectangle')});
+        //rect.observe('click', function(){alert('Hello world !! I\'m a rectangle')});
         poly.observe('click', function(){alert('Hello world !! I\'m a poly')});
-        
         g.draw();
+        
+        layer = g.addLayer();
+        rect.observe('mouseover', function(){rect.draw(layer, style3)})
+		    .observe('mouseout', function(){layer.clear()});
+
+        //l.clear();
       });
     </script>
   </head>

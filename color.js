@@ -60,6 +60,7 @@ Prototype.Color = Class.create({
 });
 
 Prototype.Color.parse = function(str){
+	if (!str) return new Prototype.Color;
 	if (str instanceof Prototype.Color) return str;
 	
 	var result, Color = Prototype.Color;
