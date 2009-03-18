@@ -51,6 +51,9 @@ var $G = Prototype.Graphics = Class.create({
 		if (!name) return this.layers.last();
 		return this.layers.find(function(l){return l.name == name});
 	},
+	toElement: function(){
+		return this.element;
+	},
 	_renderers: ['canvas','svg','vml'],
 	layers: []
 });
@@ -110,7 +113,7 @@ $G.Group = Class.create({
 		this.children.invoke('draw');
 	},
 	insert: function(element){
-		if (element instanceof $G.Shape.Interface || element instanceof $G.Group){
+		if (element instanceof $G.Shape.Base || element instanceof $G.Group){
 			element.parent = this;
 			this.children.push(element);
 		}
@@ -144,7 +147,6 @@ $G.Layer = Class.create($G.Group, {
 			this.canvas = $(window.G_vmlCanvasManager.initElement(this.canvas));
 		}
 		this.ctx = this.canvas.getContext('2d');
-		CanvasText.enable(this.ctx);
 
 		// debug
 		if (this.options.debug)
@@ -199,7 +201,7 @@ $G.Curve = {
 };
 
 $G.Shape = {
-	Interface: Class.create({ // the shape interface
+	Base: Class.create({
 		initialize: function(){
 			this.coords = $A(arguments) || [];
 			this.area = null;
@@ -305,7 +307,7 @@ $G.Shape = {
 };
 
 Object.extend($G.Shape, {
-	Polyline: Class.create($G.Shape.Interface, {
+	Polyline: Class.create($G.Shape.Base, {
 		calculatePoints: function(){
 			var i, p;
 			this.points = [];
@@ -342,7 +344,7 @@ Object.extend($G.Shape, {
 			return this;
 		}
 	}),
-	Rect: Class.create($G.Shape.Interface, {
+	Rect: Class.create($G.Shape.Base, {
 		calculatePoints: function(){
 			var w = this.coords[1],
 			    h = this.coords[2];
@@ -364,7 +366,7 @@ Object.extend($G.Shape, {
 			ctx.restore();
 		}
 	}),
-	Circle: Class.create($G.Shape.Interface, {
+	Circle: Class.create($G.Shape.Base, {
 		calculatePoints: function() {
 			var i, steps = 50, points = [], p = new $G.CoordPolar(0, this.coords[1]), p2d;
 			for (i = steps; i > -1; --i) {
@@ -391,8 +393,8 @@ Object.extend($G.Shape, {
 			ctx.restore();
 		}
 	}),
-	Oval: Class.create($G.Shape.Interface, {}),
-	Text: Class.create($G.Shape.Interface, {})
+	Oval: Class.create($G.Shape.Base, {}),
+	Text: Class.create($G.Shape.Base, {})
 });
 
 

@@ -23,7 +23,7 @@
         
       document.observe('dom:loaded', function(){
         g = new $G({className: 'graphic', debug: false});
-        $('test').insert(g.element);
+        $('test').insert(g);
 		
         circle = new $G.Shape.Circle(new $G.Coord2D(90,80), 50).setStyle(style3).scale(2,0.3).rotate(Math.PI/4);
         rect = new $G.Shape.Rect(new $G.Coord2D(120,70), 180, 120).setStyle(style2).scale(0.5,0.9).rotate(0.1).scale(2,1.5);
