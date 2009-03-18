@@ -1,5 +1,92 @@
-Prototype.Matrix = Class.create({
-  initialize: function() {
+var Matrix = function(a, b, c, d, e, f) {
+	this.a = a || 1;  this.c = c || 0;  this.e = e || 0;
+	this.b = b || 0;  this.d = d || 1;  this.f = f || 0;
+
+	this.prototype = {
+		x: function(m) {
+			var 
+			a = this.a * m.a + this.c + m.b,
+			b = this.b * m.a + this.d + m.b,
+			c = this.a * m.c + this.c + m.d,
+			d = this.b * m.c + this.d + m.d,
+			e = this.a * m.e + this.c + m.f + this.e,
+			f = this.b * m.e + this.d + m.f + this.f;
+			
+			this.a = a;  this.c = c;  this.e = e;
+			this.b = b;  this.d = d;  this.f = f;
+		},
+		
+		rotate: function(angle) {
+			var m = new Matrix(Math.cos(a), Math.sin(a), -Math.sin(a), Math.cos(a), 0, 0);
+			this.x(m);
+		},
+		
+		translate: function(x, y) {
+			y = y || 0;
+			var m = new Matrix(1, 0, 0, 1, x, y);
+			this.x(m);
+		},
+		
+		scale: function(x, y) {
+			y = y || x;
+			var m = new Matrix(x, 0, 0, y, 0, 0);
+			this.x(m);
+		},
+		
+		skewX: function(a) {
+			var m = new Matrix(1, 0, Math.tan(a), 1, 0, 0);
+			this.x(m);
+		},
+		
+		skewY: function(a) {
+			var m = new Matrix(1, Math.tan(a), 0, 1, 0, 0);
+			this.x(m);
+		}
+	}
+}
+
+/*var SVG_TRANSFORM_UNKNOWN   = 0,
+    SVG_TRANSFORM_MATRIX    = 1,
+    SVG_TRANSFORM_TRANSLATE = 2,
+    SVG_TRANSFORM_SCALE     = 3,
+    SVG_TRANSFORM_ROTATE    = 4,
+    SVG_TRANSFORM_SKEWX     = 5,
+    SVG_TRANSFORM_SKEWY     = 6;
+
+var SVGTransform = function(type, angle, matrix) {
+	this.type = type || SVG_TRANSFORM_MATRIX;
+	this.angle = angle;
+	this.matrix = matrix;
+	
+	this.prototype = {
+		setMatrix: function(m) {
+			this.matrix = m;
+			this.type = SVG_TRANSFORM_MATRIX;
+		},
+		setTranslate: function(x, y) {
+			y = y || 0;
+			this.matrix = new SVGMatrix(1, 0, 0, 1, x, y);
+			this.type = SVG_TRANSFORM_TRANSLATE;
+		},
+		setTranslate: function(x, y) {
+			y = y || 0;
+			this.matrix = new SVGMatrix(1, 0, 0, 1, x, y);
+			this.type = SVG_TRANSFORM_TRANSLATE;
+		},
+		setTranslate: function(x, y) {
+			y = y || 0;
+			this.matrix = new SVGMatrix(1, 0, 0, 1, x, y);
+			this.type = SVG_TRANSFORM_TRANSLATE;
+		}
+		
+		
+		//   void setRotate ( float angle , float cx , float cy )   void setScale ( float sx , float sy )   void setSkewX ( float angle )   void setSkewY ( float angle )   void setTranslate ( float tx , float ty ) 
+}
+
+/*
+
+
+/*  initialize: function() {
     this.m = this.getIdentity();
   },
   setCoords: function(x, y, z) {
@@ -74,4 +161,4 @@ Prototype.Matrix = Class.create({
     ];
     return this.multiply(m);
   }
-});
+});*/

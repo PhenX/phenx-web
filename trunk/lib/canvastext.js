@@ -2,15 +2,15 @@
  * This code is released to the public domain by Jim Studt, 2007.
  * He may keep some sort of up to date copy at http://www.federated.com/~jim/canvastext/
  * It as been modified by Fabien Ménager to handle font style like size, weight, color and rotation. 
- * A partial support for accentuated letters as been added too.
+ * A partial support for special characters has been added too.
  */
 var CanvasText = {
-	/** The letters definition. It is a list of letters, 
-	 * with their width, and the coordinates of points compositing them.
-	 * The syntax for the points is : [x, y], null value means "pen up"
-	 */
+  /** The letters definition. It is a list of letters, 
+   * with their width, and the coordinates of points compositing them.
+   * The syntax for the points is : [x, y], null value means "pen up"
+   */
   letters: {
-		'\n':{ width: -1, points: [] },
+    '\n':{ width: -1, points: [] },
     ' ': { width: 10, points: [] },
     '!': { width: 10, points: [[5,21],[5,7],null,[5,2],[4,1],[5,0],[6,1],[5,2]] },
     '"': { width: 16, points: [[4,21],[4,14],null,[12,21],[12,14]] },
@@ -125,7 +125,7 @@ var CanvasText = {
   },
   
   specialchars: {
-  	'pi': { width: 19, points: [[6,14],[6,0],null,[14,14],[14,0],null,[2,13],[6,16],[13,13],[17,16]] }
+    'pi': { width: 19, points: [[6,14],[6,0],null,[14,14],[14,0],null,[2,13],[6,16],[13,13],[17,16]] }
   },
   
   /** Diacritics, used to draw accentuated letters */
@@ -140,14 +140,21 @@ var CanvasText = {
   
   /** The default font styling */
   style: {
-    size: 8,          // font height in pixels
-    font: null,       // not yet implemented
-    color: '#000000', // 
-    weight: 1,        // float, 1 for 'normal'
-    angle: 0,         // in degrees, clockwise
-    tracking: 1,      // space between the letters, float, 1 for 'normal'
-    boundingBoxColor: null // color of the bounding box (null to hide), can be used for debug and font drawing
+    size: 8,            // font height in pixels
+    font: null,         // not yet implemented
+    color: '#000000',   // font color
+    weight: 1,          // float, 1 for 'normal'
+    halign: 'l',        // l: left, r: right, c: center
+    valign: 'b',        // t: top, m: middle, b: bottom 
+    adjustAlign: false, // modifies the alignments if the angle is different from 0 to make the spin point always at the good position
+    angle: 0,           // in radians, anticlockwise
+    tracking: 1,        // space between the letters, float, 1 for 'normal'
+    boundingBoxColor: '#ff0000', // color of the bounding box (null to hide), can be used for debug and font drawing
+    originPointColor: '#000000'  // color of the bounding box (null to hide), can be used for debug and font drawing
   },
+  
+  debug: false,
+  _bufferLexemes: {},
   
   /** Get the letter data corresponding to a char
    * @param {String} ch - The char
@@ -157,33 +164,35 @@ var CanvasText = {
   },
   
   parseLexemes: function(str) {
-  	var i, c, matches = str.match(/&[A-Za-z]{2,5};|\s|./g);
-  	var result = [], chars = [];
-  	for (i = 0; i < matches.length; i++) {
-  		c = matches[i];
-  		if (c.length == 1) 
-  			chars.push(c);
-  		else {
-  			var entity = c.substring(1, c.length-1);
-  			if (CanvasText.specialchars[entity]) 
-  				chars.push(entity);
-  			else
-  				chars = chars.concat(c.toArray());
-  		}
-  	}
-  	for (i = 0; i < chars.length; i++) {
-  		c = chars[i];
-  		if (c = CanvasText.letters[c] || CanvasText.specialchars[c])
-  		  result.push(c);
-  	}
-  	return result.compact();
+    if (CanvasText._bufferLexemes[str]) 
+      return CanvasText._bufferLexemes[str];
+    
+    var i, c, matches = str.match(/&[A-Za-z]{2,5};|\s|./g);
+    var result = [], chars = [];
+    for (i = 0; i < matches.length; i++) {
+      c = matches[i];
+      if (c.length == 1) 
+        chars.push(c);
+      else {
+        var entity = c.substring(1, c.length-1);
+        if (CanvasText.specialchars[entity]) 
+          chars.push(entity);
+        else
+          chars = chars.concat(c.toArray());
+      }
+    }
+    for (i = 0; i < chars.length; i++) {
+      c = chars[i];
+      if (c = CanvasText.letters[c] || CanvasText.specialchars[c]) result.push(c);
+    }
+    return CanvasText._bufferLexemes[str] = result.compact();
   },
 
   /** Get the font ascent for a given style
    * @param {Object} style - The reference style
    */
   ascent: function(style) {
-  	style = style || {};
+    style = style || {};
     return (style.size || CanvasText.style.size);
   },
   
@@ -191,7 +200,7 @@ var CanvasText = {
    * @param {Object} style - The reference style
    * */
   descent: function(style) {
-  	style = style || {};
+    style = style || {};
     return 7.0*(style.size || CanvasText.style.size)/25.0;
   },
   
@@ -207,11 +216,49 @@ var CanvasText = {
         total = 0;
 
     for (i = lexemes.length-1; i > -1; --i) {
-    	c = lexemes[i];
-    	width = (c.diacritic) ? CanvasText.letter(c.letter).width : c.width;
+      c = lexemes[i];
+      width = (c.diacritic) ? CanvasText.letter(c.letter).width : c.width;
       total += width * (style.tracking || CanvasText.style.tracking) * (style.size || CanvasText.style.size) / 25.0;
     }
     return total;
+  },
+  
+  getDimensions: function(str, style) {
+    var width = CanvasText.measure(str, style),
+        height = style.size || CanvasText.style.size,
+        angle = style.angle || CanvasText.style.angle;
+
+    if (style.angle == 0) return {width: width, height: height};
+    return {
+      width:  Math.abs(Math.cos(angle) * width) + Math.abs(Math.sin(angle) * height),
+      height: Math.abs(Math.sin(angle) * width) + Math.abs(Math.cos(angle) * height)
+    }
+  },
+  
+  getBestAlign: function(angle, style) {
+    angle += CanvasText.getAngleFromAlign(style.halign, style.valign);
+    var a = {h:'c', v:'m'};
+    if (Math.round(Math.cos(angle)*1000)/1000 != 0) 
+      a.h = (Math.cos(angle) > 0 ? 'r' : 'l');
+    
+    if (Math.round(Math.sin(angle)*1000)/1000 != 0) 
+      a.v = (Math.sin(angle) > 0 ? 't' : 'b');
+    return a;
+  },
+  
+  getAngleFromAlign: function(halign, valign) {
+    var pi = Math.PI, table = {
+      'rm': 0,
+      'rt': pi/4,
+      'ct': pi/2,
+      'lt': 3*(pi/4),
+      'lm': pi,
+      'lb': -3*(pi/4),
+      'cb': -pi/2,
+      'rb': -pi/4,
+      'cm': 0
+    }
+    return table[halign+valign];
   },
   
   /** Draws serie of points at given coordinates 
@@ -221,8 +268,9 @@ var CanvasText = {
    * @param {Number} y - The Y coordinate
    * @param {Number} mag - The scale 
    */
-  drawPoints: function (ctx, points, x, y, mag) {
+  drawPoints: function (ctx, points, x, y, mag, offset) {
     var i, a, penUp = true, needStroke = 0;
+    offset = offset || {x:0, y:0};
     
     ctx.beginPath();
     for (i = 0; i < points.length; i++) {
@@ -232,45 +280,69 @@ var CanvasText = {
         continue;
       }
       if (penUp) {
-        ctx.moveTo(x + a[0]*mag, y - a[1]*mag);
+        ctx.moveTo(x + a[0]*mag + offset.x, y - a[1]*mag + offset.y);
         penUp = false;
       }
       else {
-        ctx.lineTo(x + a[0]*mag, y - a[1]*mag);
+        ctx.lineTo(x + a[0]*mag + offset.x, y - a[1]*mag + offset.y);
       }
     }
     ctx.stroke();
   },
   
   /** Draws a text at given coordinates and with a given style
-   * @param {Canvas context} ctx - The canvas context
    * @param {String} str - The text to draw
    * @param {Number} xOrig - The X coordinate
    * @param {Number} yOrig - The Y coordinate
    * @param {Object} style - The font style
    */
-  draw: function(ctx, str, xOrig, yOrig, style) {
+  draw: function(str, xOrig, yOrig, style) {
     if (!str) return;
-    style = style || {};
+    style = style || CanvasText.style;
+    style.halign = style.halign || CanvasText.style.halign;
+    style.valign = style.valign || CanvasText.style.valign;
+    style.angle = style.angle || CanvasText.style.angle;
+    style.size = style.size || CanvasText.style.size;
+    style.adjustAlign = style.adjustAlign || CanvasText.style.adjustAlign;
     
     var i, c, total = 0,
-        mag = (style.size || CanvasText.style.size) / 25.0,
+        mag = style.size / 25.0,
         x = 0, y = 0,
-        lexemes = CanvasText.parseLexemes(str);
-
-    ctx.save();
-    ctx.translate(xOrig, yOrig);
-    ctx.rotate(Math.PI * (style.angle || CanvasText.style.angle) / 180);
-    ctx.lineCap = "square";
-    ctx.lineJoin = "round";
-    ctx.lineWidth = 2.0 * mag * (style.weight || CanvasText.style.weight);
-    ctx.strokeStyle = style.color || CanvasText.style.color;
+        lexemes = CanvasText.parseLexemes(str),
+      offset = {x:0, y:0}, 
+        measure = CanvasText.measure(str, style),
+        align;
+        
+    if (style.adjustAlign) {
+      align = CanvasText.getBestAlign(style.angle, style);
+      style.halign = align.h;
+      style.valign = align.v;
+    }
+        
+    switch (style.halign) {
+      case 'l': break;
+      case 'c': offset.x = -measure / 2; break;
+      case 'r': offset.x = -measure; break;
+    }
+    
+    switch (style.valign) {
+      case 'b': break;
+      case 'm': offset.y = style.size / 2; break;
+      case 't': offset.y = style.size; break;
+    }
+    
+    this.save();
+    this.translate(xOrig, yOrig);
+    this.rotate(style.angle);
+    this.lineCap = "round";
+    this.lineWidth = 2.0 * mag * (style.weight || CanvasText.style.weight);
+    this.strokeStyle = style.color || CanvasText.style.color;
     
     for (i = 0; i < lexemes.length; i++) {
-    	c = lexemes[i];
+      c = lexemes[i];
       if (c.width == -1) {
         x = 0;
-        y = (style.size || CanvasText.style.size) * 1.4;
+        y = style.size * 1.4;
         continue;
       }
     
@@ -278,47 +350,40 @@ var CanvasText = {
           width = c.width;
           
       if (c.diacritic) {
-        var dia = CanvasText.diacritics[c.diacritic];
-        var char = CanvasText.letter(c.letter);
+        var dia = CanvasText.diacritics[c.diacritic],
+            character = CanvasText.letter(c.letter);
 
-        CanvasText.drawPoints(ctx, dia.points, x, y - (c.letter.toUpperCase() == c.letter ? 3 : 0), mag);
-        points = char.points;
-        width = char.width;
+        CanvasText.drawPoints(this, dia.points, x, y - (c.letter.toUpperCase() == c.letter ? 3 : 0), mag, offset);
+        points = character.points;
+        width = character.width;
       }
 
-      CanvasText.drawPoints(ctx, points, x, y, mag);
+      CanvasText.drawPoints(this, points, x, y, mag, offset);
       
-      if (style.boundingBoxColor || CanvasText.style.boundingBoxColor) {
-      	ctx.save();
-        ctx.lineCap = "round";
-        ctx.lineWidth = 0.5;
-        ctx.strokeStyle = (style.boundingBoxColor || CanvasText.style.boundingBoxColor);
-      	ctx.strokeRect(x, y, width*mag, -(style.size || CanvasText.style.size));
-      	ctx.restore();
+      if (CanvasText.debug) {
+        this.save();
+        this.lineJoin = "miter";
+        this.lineWidth = 0.5;
+        this.strokeStyle = (style.boundingBoxColor || CanvasText.style.boundingBoxColor);
+        this.strokeRect(x+offset.x, y+offset.y, width*mag, -style.size);
+        
+        this.fillStyle = (style.originPointColor || CanvasText.style.originPointColor);
+        this.beginPath();
+        this.arc(0, 0, 1.5, 0, Math.PI*2, true);
+        this.fill();
+        this.restore();
       }
       
       x += width*mag*(style.tracking || CanvasText.style.tracking);
     }
-    ctx.restore();
+    this.restore();
     return total;
-  },
-  
-  /** Enables the text function for a Canvas context
-   * @param {Canvas context} ctx - The canvas context
-   */
-  enable: function(ctx) {
-    ctx.drawText    = function(text, x, y, style) { return CanvasText.draw(ctx, text, x, y, style); };
-    ctx.measureText = function(text, style) { return CanvasText.measure(text, style); };
-    ctx.fontAscent  = function(style) { return CanvasText.ascent(style); };
-    ctx.fontDescent = function(style) { return CanvasText.descent(style); };
-
-    ctx.drawTextRight = function(text, x, y, style) {
-      var w = CanvasText.measure(text, style);
-      return CanvasText.draw(ctx, text, x-w, y, style); 
-    };
-    ctx.drawTextCenter = function(text, x, y, style) {
-      var w = CanvasText.measure(text, style);
-      return CanvasText.draw(ctx, text, x-w/2, y, style);
-    };
   }
 };
+
+/** The text functions are bound to the CanvasRenderingContext2D prototype */
+CanvasRenderingContext2D.prototype.drawText      = CanvasText.draw;
+CanvasRenderingContext2D.prototype.measureText   = CanvasText.measure;
+CanvasRenderingContext2D.prototype.getTextBounds = CanvasText.getDimensions;
+CanvasRenderingContext2D.prototype.fontAscent    = CanvasText.ascent;
+CanvasRenderingContext2D.prototype.fontDescent   = CanvasText.descent;
