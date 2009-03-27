@@ -3,7 +3,6 @@
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
 		<title>Canvas text example</title>
-		<link rel="stylesheet" href="style.css" type="text/css" />
 		
 		<!--[if IE]>
       <script type="text/javascript" src="lib/excanvas.js"></script>
@@ -14,6 +13,9 @@
 			* {
 				margin: 0;
 				padding: 0;
+			}
+			body {
+				background: #fff;
 			}
 			#test-canvas, #test-div {
 				border: 1px solid #000;
@@ -34,39 +36,41 @@
 	</head>
 	<body>
 
-    You should only see the word "elit" in black
+    Ideally, you should only see the word "elit" in black.
 		<div style="position: relative; margin: 20px;">
 			<canvas width="500" height="300" id="test-canvas"></canvas>
 		  <div style="width: 500px; height: 300px;" id="test-div">Lorem ipsum dolor sit amet, consectetuer adipiscing</div>
 		</div>
 		
 		<script type="text/javascript">
-	  	var canvas = document.getElementById("test-canvas");
-			if (window.attachEvent && !window.opera) {
-				canvas = window.G_vmlCanvasManager.initElement(canvas);
+			window.onload = function(){
+		  	var canvas = document.getElementById("test-canvas");
+		  	if (window.attachEvent && !window.opera) {
+		  		canvas = window.G_vmlCanvasManager.initElement(canvas);
+		  	}
+		  	var ctx = canvas.getContext('2d');
+		  	ctx.strokeStyle = "rgba(255,0,0,0.5)";
+		  	ctx.fillStyle = "rgba(0,0,0,1)";
+		  	ctx.lineWidth = 1;
+		  	ctx.lineJoin = 'miter';
+		  	
+		  	ctx.font = "1em 'arial'";
+		  	ctx.fillText('Lorem ipsum dolor sit amet, consectetuer adipiscing elit', 0, 20);
+		  	
+		  	var n = 0;
+		  	function draw(){
+		  		ctx.save();
+		  		ctx.clearRect(0, 0, 500, 300);
+		  		ctx.translate(250, 150);
+		  		ctx.rotate(n++ * 0.02);
+		  		ctx.translate(-250, 0);
+		  		ctx.strokeText('Lorem ipsum dolor.', 0, -20);
+		  		ctx.fillText('Aliquam euismod liber', 0, 20);
+		  		ctx.restore();
+		  		setTimeout(draw, 20);
+		  	}
+		    //draw();
 			}
-			var ctx = canvas.getContext('2d');
-	  	ctx.strokeStyle = "rgba(255,0,0,0.5)";
-	  	ctx.fillStyle = "rgba(0,0,0,1)";
-	  	ctx.lineWidth = 1;
-	  	ctx.lineJoin = 'miter';
-			
-			ctx.font = "1em 'arial'";
-			ctx.fillText('Lorem ipsum dolor sit amet, consectetuer adipiscing elit', 0, 20);
-
-      var n = 0;
-			function draw() {
-				ctx.save();
-        ctx.clearRect(0,0,500, 300);
-				ctx.translate(250,150);
-				ctx.rotate(n++*0.02);
-				ctx.translate(-250,0);
-				ctx.strokeText('Lorem ipsum dolor.', 0, -20);
-				ctx.fillText('Aliquam euismod liber', 0, 20);
-				ctx.restore();
-				setTimeout(draw, 20);
-			}
-			//draw();
 		</script>
 	</body>
 </html>
