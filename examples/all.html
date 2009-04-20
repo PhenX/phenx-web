@@ -20,11 +20,11 @@ function main () {
   );*/
   
   var form = $(document.forms['form-test']);
-  form.elements['slider-1'].slider({step: 1, max: 100, hideInput: false,showTicks: false, orientation: 'vertical', ticksPosition: 'both'});
-  form.elements['slider-2'].slider({step: 2, max: 10, hideInput: true, orientation: 'vertical', ticksPosition: 'right', tooltip: true});
-  form.elements['slider-3'].slider({step: 0.5, min: -20, max: 20, showTicks: true, orientation: 'horizontal', ticksPosition: 'bottom'});
+  $(form.elements['slider-1']).slider({step: 1, max: 100, hideInput: false,showTicks: false, orientation: 'vertical', ticksPosition: 'both'});
+  $(form.elements['slider-2']).slider({step: 2, max: 10, hideInput: true, orientation: 'vertical', ticksPosition: 'right', tooltip: true});
+  $(form.elements['slider-3']).slider({step: 0.5, min: -20, max: 20, showTicks: true, tooltip: true, orientation: 'horizontal', ticksPosition: 'bottom'});
   
-  $A(form.elements['slider-4']).each(function(e){e.slider({step: 0.1, min: 0, max: 10, showTicks: false, tooltip: true, orientation: 'vertical', ticksPosition: 'both'})});
+  $A(form.elements['slider-4']).each(function(e){$(e).slider({step: 0.1, min: 0, max: 10, showTicks: false, tooltip: true, orientation: 'vertical', ticksPosition: 'both'})});
 }
 
 document.observe('dom:loaded', main);
