@@ -61,6 +61,8 @@ ul.select-tree li {
   background: #fff;
   cursor: pointer;
   margin-left: 0;
+  display: block;
+  width: 100%;
 }
 
 ul.select-tree li:hover {
@@ -110,12 +112,10 @@ ul.select-tree .highlight {
 
 .control.slider.horizontal {
   height: 18px;
-  width: 100%;
 }
 
 .control.slider.vertical {
   width: 18px;
-  height: 100%;
 }
 
 /** Slider control */

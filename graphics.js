@@ -33,7 +33,7 @@ var $G = Prototype.Graphics = Class.create({
 		this.img      = new Element('img',{style:style, usemap:'#'+this.map.name, src:'pix.gif'});
 		this.img.onmousedown = this.img.onmouseup = this.img.onclick = function(){return false};
 		
-		this.element  = new Element('div',{style:'position:relative;'+dimensions, className:this.options.className});
+		this.element  = new Element('div',{height:this.options.height, width:this.options.width, style:'position:relative;'+dimensions, className:this.options.className});
 		this.element.insert(this.img).insert(this.map);
 		
 		// add the first layer
@@ -135,17 +135,18 @@ $G.Layer = Class.create($G.Group, {
 		this.options = Object.extend(this.container.options, this.options);
 		this.name = '';
 		
-		this.canvas = new Element('canvas', {
-			style: 'position:absolute;top:0;left:0;margin:0;width:'+this.options.width+'px;height:'+this.options.height+'px;',
-			width: this.options.width,
-			height: this.options.height
+		this.canvas = $(document.createElement('canvas'));
+    this.canvas.writeAttribute({
+      style: 'position:absolute;top:0;left:0;margin:0;width:'+this.options.width+'px;height:'+this.options.height+'px;',
+      width: this.options.width,
+      height: this.options.height
 		});
 		this.container.img.insert({before:this.canvas});
 		this.id = this.canvas.identify();
-		
-		if (Prototype.Browser.IE) {
-			this.canvas = $(window.G_vmlCanvasManager.initElement(this.canvas));
-		}
+
+    if (Prototype.Browser.IE)
+      window.G_vmlCanvasManager.initElement(this.canvas);
+      
 		this.ctx = this.canvas.getContext('2d');
 
 		// debug
