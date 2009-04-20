@@ -884,22 +884,26 @@ Element.addMethods('input', {
       sliderSize = element.slider.getDimensions()[vertical ? 'height' : 'width'];
     }
     
+    function getPointerPosition(e) {
+      return vertical ? (e.pointerY() - staticOffset.top) : (e.pointerX() - staticOffset.left);     
+    }
+    
     function mouseDownHandler(e) {
       e.stop();
       updateDimensions();
       document.observe('mousemove', mouseMoveHandler);
       document.observe('mouseup', mouseUpHandler);
+      
+      if (e.element() != element.grip) mouseMoveHandler(e);
       element.grip.blur();
     }
     
     function mouseMoveHandler(e) {
       e.stop();
-      var pos = vertical ? (e.pointerY() - staticOffset.top) : (e.pointerX() - staticOffset.left);          
-          
+      var pos = getPointerPosition(e);
       if (pos >= 0 && pos <= sliderSize) {
         var posStyle = updateValue(pos);
-        // Grip
-        element.grip.style[vertical ? 'top' : 'left'] = posStyle + 'px';
+        updateGrip(element.sliderValue);
         
         // Tootip
         if (o.tooltip) {
@@ -917,8 +921,11 @@ Element.addMethods('input', {
       element.grip.focus();
     }
     
-    element.grip.observe('mousedown', mouseDownHandler);
-    element.grip.observe('keypress', keyPressHandler);
+    element.grip.observe('mousedown', mouseDownHandler)
+                .observe('keypress', keyPressHandler);
+                
+    element.container.observe('mousedown', mouseDownHandler);
+    
     updateDimensions();
     updateGrip(element.value);
   }

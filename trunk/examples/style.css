@@ -139,7 +139,7 @@ ul.select-tree .highlight {
 }
 
 .control.vertical .tooltip {
-  left: -20px;
+  right: 20px;
 }
 
 .control.horizontal div.slider {
