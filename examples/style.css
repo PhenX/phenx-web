@@ -112,10 +112,12 @@ ul.select-tree .highlight {
 
 .control.slider.horizontal {
   height: 18px;
+  margin-right: 10px;
 }
 
 .control.slider.vertical {
   width: 18px;
+  margin-bottom: 10px;
 }
 
 /** Slider control */
@@ -164,7 +166,6 @@ ul.select-tree .highlight {
 }
 
 .control.horizontal .ticks {
-  border-left: 1px solid #999;
   left: 5px;
   right: 5px;
   top: 50%;
@@ -181,7 +182,6 @@ ul.select-tree .highlight {
 }
 
 .control.vertical .ticks {
-  border-top: 1px solid #999;
   top: 5px;
   bottom: 5px;
   left: 50%;
@@ -201,16 +201,30 @@ ul.select-tree .highlight {
   height: 100%;
   width: 100%;
   float: left;
+  position: relative;
 }
 
 .control.horizontal .ticks div {
-  border-right: 1px solid #999;
-  margin-left: -1px;
+  border-left: 1px solid #999;
+  margin-right: -1px;
 }
 
 .control.vertical .ticks div {
-  border-bottom: 1px solid #999;
-  margin-top: -1px;
+  border-top: 1px solid #999;
+  margin-bottom: -1px;
+}
+
+.control .ticks div span {
+  position: absolute;
+  color: #666;
+}
+
+.control.vertical .ticks div span {
+  left: 12px;
+}
+
+.control.horizontal .ticks div span {
+  top: 8px;
 }
 
 /** Slider grip */
