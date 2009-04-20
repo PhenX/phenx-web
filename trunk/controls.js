@@ -784,7 +784,8 @@ Element.addMethods('input', {
       ticksPosition: 'bottom',
       showTicks: true,
       tooltip: false,
-      hideInput: true
+      hideInput: true,
+      ticks: {}
     }, options);
     
     element.sliderValue = parseFloat(element.getAttribute('value') || 0);
@@ -804,8 +805,13 @@ Element.addMethods('input', {
     if (o.showTicks) {
       element.ticks = new Element('div', {className: 'ticks'});
       element.slider.insert({before: element.ticks});
-      for (i = 0; i < ticksCount; i++) {
-        element.ticks.insert('<div style="'+[vertical ? 'height' : 'width']+':'+100/ticksCount+'%;"></div>');
+      for (i = 0; i <= ticksCount; i++) {
+        var v = o.ticks[o.min + (o.step * i)];
+        element.ticks.insert('<div style="'+[vertical ? 'height' : 'width']+':'+(i == ticksCount ? 0 : (100/ticksCount))+'%;"><span>'+(Object.isUndefined(v)?'':v)+'</span></div>');
+        var label = element.ticks.lastChild.select('span').first(),
+            style = {};
+            style[vertical ? 'top' : 'left'] = -(label.getDimensions()[vertical ? 'height' : 'width']/2) + 'px';
+        label.setStyle(style);
       }
     }
     
