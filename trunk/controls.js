@@ -83,73 +83,54 @@ DOM.tags.each(function (tag) {
  *                single checkboxes/radios, a string for textareas and text inputs
  */
 function $V (element, value, fire) {
- if (!element) {
-   return;
- }
- element = $(element);
- fire = Object.isUndefined(fire) ? true : fire;
- 
- // We get the tag and the type
- var tag  = element.tagName ? element.tagName.toLowerCase() : null;
- var type = element.type    ? element.type.toLowerCase()    : null;
-
- // If it is a form element
- if (Object.isElement(element) && (
-    tag == 'input' || 
-    tag == 'select' || 
-    tag == 'textarea')
-   ) {
-
-   // If the element is a checkbox, we check if it's checked
-   var oldValue = (type == 'checkbox') ? element.checked : $F(element);
-
-   // If a value is provided
-   if (!Object.isUndefined(value) && value != oldValue) {
-     element.setValue(value);
-     if (fire) {
-       (element.onchange || Prototype.emptyFunction).bind(element)();
-     }
-   }
-   
-   // else, of no value is provided
-   else {
-     return oldValue;
-   }
- } 
- 
- // If the element is a list of elements (like radio buttons)
- else if (Object.isArray(element) || (element[0] && Object.isElement(element[0]))) {
-   if (!Object.isUndefined(value)) { // If a value is provided
-   
-     // If value isn't an array, we make it an array
-     value = Object.isArray(value) ? value : [value];
-     
-     // For every element, we apply the right value (in an array or not)
-     $A(element).each(function(e) { // For every element in the list
-       $V(e, value.indexOf(e.value) != -1, fire);
-     });
-   }
-   else { // else, if no value is provided
-     var ret = [];
-     $A(element).each(function (e) { // For every element in the list
-       if ($V(e)) {
-         ret.push(e.value);
-       }
-       type = e.type ? e.type.toLowerCase() : null;
-     });
-     
-     if (type == 'radio') {
-       ret = ret.reduce();
-     }
-     return (ret && ret.length > 0) ? ret : null;
-   }
- }
- return;
+  if (!element) return;
+  
+  element = $(element);
+  fire = Object.isUndefined(fire) ? true : fire;
+  
+  // If it is a form element
+  if (Object.isElement(element) && element.tagName.match(/^(input|select|textarea)$/i)) {
+    
+    // If the element is a checkbox, we check if it's checked
+    var oldValue = (element.type.match(/^checkbox$/i)) ? element.checked : $F(element);
+    
+    // If a value is provided
+    if (!Object.isUndefined(value) && value != oldValue) {
+      element.setValue(value);
+      if (fire) (element.onchange || Prototype.emptyFunction).bind(element)();
+    }
+    
+    // else, of no value is provided
+    else return oldValue;
+  }
+  
+  // If the element is a list of elements (like radio buttons)
+  else if (Object.isArray(element) || (element[0] && Object.isElement(element[0]))) {
+    if (!Object.isUndefined(value)) { // If a value is provided
+      // If value isn't an array, we make it an array
+      value = Object.isArray(value) ? value : [value];
+      
+      // For every element, we apply the right value (in an array or not)
+      $A(element).each(function(e) { // For every element in the list
+      $V(e, value.indexOf(e.value) != -1, fire);
+      });
+    }
+    else { // else, if no value is provided
+      var type, ret = [];
+      
+      $A(element).each(function (e) { // For every element in the list
+        if ($V(e)) ret.push(e.value);
+        type = e.type || type;
+      });
+      
+      if (type && type.match(/^radio$/i)) ret = ret.reduce();
+      return (ret && ret.length > 0) ? ret : null;
+    }
+  }
 }
 
 Element.addMethods({
   setResizable: function (element, options) {
-    if (!Prototype.Browser.IE) {
     options = Object.extend({
       step: 1
     }, options);
@@ -163,70 +144,69 @@ Element.addMethods({
     element.style.marginBottom = '0';
     
     // grippie's class and style
-    oGrippie.addClassName('grippie-h');
-    oGrippie.setOpacity(0.5);
+    oGrippie.addClassName('grippie-h').setOpacity(0.5);
     if (!element.visible()) {
       oGrippie.hide();
     }
     
     function startDrag(e) {
-      staticOffset = element.getHeight() - Event.pointerY(e); 
+      e.stop();
+      staticOffset = element.getHeight() - e.pointerY(); 
       element.setOpacity(0.4);
-      document.onmousemove = performDrag;
-      document.onmouseup = endDrag;
-      return false;
+      document.observe('mousemove', performDrag);
+      document.observe('mouseup', endDrag);
     }
     
     // When the mouse is pressed on the grippie, we begin the drag
-    oGrippie.onmousedown = startDrag;
+    oGrippie.observe('mousedown', startDrag);
     element.insert({after: oGrippie});
   
     function performDrag(e) {
+      e.stop();
       var h = null;
       if (typeof options.step == 'string') {
         var iStep = element.getStyle(options.step);
         iStep = iStep.substr(0, iStep.length - 2);
         
-        h = Math.max(iStep*2, staticOffset + Event.pointerY(e)) - Math.round(oGrippie.getHeight()/2);
+        h = Math.max(iStep*2, staticOffset + e.pointerY()) - Math.round(oGrippie.getHeight()/2);
         h = Math.round(h / iStep)*iStep;
       } else {
         h = Math.max(32, staticOffset + Event.pointerY(e));
       }
       element.setStyle({height: h + 'px'});
-      return false;
     }
   
     function endDrag(e) {
       element.setStyle({opacity: 1});
-      document.onmousemove = null;
-      document.onmouseup = null;
-      return false;
+      document.stopObserving('mousemove', performDrag);
+      document.stopObserving('mouseup', endDrag);
+      e.stop();
     }
-  }
   }
 } );
 
 
 Element.addMethods('select', {
   buildTree: function (element, options) {
-    if (!Prototype.Browser.IE) {
-    var select  = element; // DOM select
-    var search  = null; // DOM text input
-    var tree    = null; // DOM UL/LI tree representing the select/optgroup
-    var list    = null; // DOM UL/LI list for keyword search
-    var pos     = null; // DOM select position
-    var dim     = null; // DOM select dimensions
+    //if (Prototype.Browser.IE) return;
+    
+    var select  = element, // DOM select
+        search  = null, // DOM text input
+        tree    = null, // DOM UL/LI tree representing the select/optgroup
+        list    = null, // DOM UL/LI list for keyword search
+        pos     = null, // DOM select position
+        dim     = null; // DOM select dimensions
     
     options = Object.extend({
       className: 'select-tree'
     }, options);
     
     // Utility functions ////////
-    var hideSelectTrees = function () {
-      $$('ul.'+options.className+' ul').each(function(ul) {ul.hide()});
+    function hideSelectTrees() {
+      $$('ul.'+options.className+' ul').invoke('hide');
     }
     
-    var validKey = function (keycode) {
+    function validKey(keycode) {
       return (keycode >= 48 && keycode <= 90 || // letters and digits
               keycode >= 96 && keycode <= 111 || // num pad
               keycode >= 186 && keycode <= 181 ||
@@ -235,7 +215,7 @@ Element.addMethods('select', {
               keycode == 8); // backspace
     }
     
-    var updateCoordinates = function () {
+    function updateCoordinates() {
       pos = select.cumulativeOffset();
       dim = select.getDimensions();
       
@@ -243,32 +223,34 @@ Element.addMethods('select', {
       pos.top  = pos.top +parseInt(select.getStyle('margin-top').split('px')[0])-1+dim.height+'px';
     }
     
-    var reposition = function () {
+    function reposition() {
       updateCoordinates();
       var style = {zIndex: 40, position: 'absolute', left: pos.left, top: pos.top};
       tree.setStyle(style);
       list.setStyle(style);
     }
     
-    var makeTree = function (sel, ul) {
+    function makeTree(sel, ul) {
       updateCoordinates();
-      var style = {width: dim.width+'px'};
-      select.setStyle(style).childElements().each(function(d) {d.hide()});
+      var style = {'width': dim.width+'px'};
+      select.setStyle(style).childElements().invoke('hide');
       tree.setStyle(style);
       list.setStyle(style);
-      search.setStyle({width: dim.width-4+'px'});
+      search.setStyle({'width': dim.width-4+'px'});
       
       ul.update(null);
       
       sel.childElements().each(function (o) {
         var li = new Element('li').addClassName(o.className);
-        li.setStyle({
-          color: o.getStyle('color'),
-          borderLeft: o.getStyle('border-left'),
-          borderRight: o.getStyle('border-right'),
-          borderTop: o.getStyle('border-top'),
-          borderBottom: o.getStyle('border-bottom')
+
+       /* li.setStyle({
+          'color': o.getStyle('color'),
+          'borderLeft': o.getStyle('borderLeft'),
+          'borderRight': o.getStyle('border-right'),
+          'borderTop': o.getStyle('border-top'),
+          'borderBottom': o.getStyle('border-bottom')
         });
+        */
         
         // If it is an optgroup
         if (o.tagName.toLowerCase() == 'optgroup') {
@@ -308,7 +290,7 @@ Element.addMethods('select', {
             // we set the value and hide every other select tree
             $V(select, o.value, true);
             tree.highlight();
-            $$('ul.'+options.className).each(function(ul) {ul.hide()});
+            $$('ul.'+options.className).invoke('hide');
           });
           
           // we hide every other other select tree ul on mouseover
@@ -331,6 +313,7 @@ Element.addMethods('select', {
     // Tree -------------
     tree = new Element('ul', {"class": options.className, id: select.id+'_tree'});
     tree.display = function (e) {
+      e.stop();
       if (tree.empty()) {
         makeTree(select, tree);
       }
@@ -339,12 +322,11 @@ Element.addMethods('select', {
       reposition();
       tree.show();
       
-      document.body.observe('mouseup', tree.undisplay);
-      return false;
+      document.observe('mouseup', tree.undisplay);
     }
     
     tree.undisplay = function (e) {
-      document.body.stopObserving('mouseup', tree.undisplay);
+      document.stopObserving('mouseup', tree.undisplay);
       tree.hide();
     }
     
@@ -477,9 +459,9 @@ Element.addMethods('select', {
     select.insert({after: search});
     
     // The search input to blur the select control and catch keys
-    search.observe('keydown', search.display);
-    search.observe('keydown', list.navigate);
-    search.observe('keyup',   search.catchKey);
+    search.observe('keydown', search.display)
+          .observe('keydown', list.navigate)
+          .observe('keyup',   search.catchKey);
 
     // Select
     select.writeAttribute('size', 1);
@@ -493,8 +475,7 @@ Element.addMethods('select', {
       search.observe('keydown', search.display);
     }
 
-    select.onclick = tree.display;
-  }
+    select.observe('click', tree.display);
   }
 });
 
@@ -583,12 +564,13 @@ Element.addMethods('input', {
       format: Prototype.K
     }, options);
 
-    var maskArray = mask.toArray();
-    var buffer = new Array(mask.length);
-    var locked = new Array(mask.length);
-    var valid = false;   
-    var ignore = false; //Variable for ignoring control keys
-    var firstNonMaskPos = null;
+    var maskArray = mask.toArray(),
+        buffer = new Array(mask.length),
+        locked = new Array(mask.length),
+        valid = false,
+        ignore = false, //Variable for ignoring control keys
+        firstNonMaskPos = null;
+        
     element.rawvalue = null;
     
     var re = new RegExp("^"+
@@ -642,8 +624,8 @@ Element.addMethods('input', {
     
     // Key down event, called on element.onkeydown
     function keydownEvent(e) {
-      var pos = element.caret();
-      var k = getKeycode(e);
+      var pos = element.caret(),
+          k = getKeycode(e);
       ignore = ((k < 41) && (k != 32) && (k != 16)); // ignore modifiers, home, end, ... except space and shift
       
       //delete selection before proceeding
@@ -653,41 +635,39 @@ Element.addMethods('input', {
       
       //backspace and delete get special treatment
       switch (k) {
-      case 8: // backspace
-        while(pos.begin-- >= 0) {
-          if(!locked[pos.begin]) {
-            buffer[pos.begin] = element.options.placeholder;
-            if(Prototype.Browser.Opera) {
-              //Opera won't let you cancel the backspace, so we'll let it backspace over a dummy character.
-              s = writeBuffer();
-              element.value = s.substring(0, pos.begin)+" "+s.substring(pos.begin);
-              element.caret(pos.begin+1);
+        case 8: // backspace
+          while(pos.begin-- >= 0) {
+            if(!locked[pos.begin]) {
+              buffer[pos.begin] = element.options.placeholder;
+              if(Prototype.Browser.Opera) {
+                //Opera won't let you cancel the backspace, so we'll let it backspace over a dummy character.
+                s = writeBuffer();
+                element.value = s.substring(0, pos.begin)+" "+s.substring(pos.begin);
+                element.caret(pos.begin+1);
+              }
+              else {
+                writeBuffer();
+                element.caret(Math.max(firstNonMaskPos, pos.begin));
+              }
+              return e.stop();
             }
-            else {
-              writeBuffer();
-              element.caret(Math.max(firstNonMaskPos, pos.begin));
-            }
-            return false;
           }
-        }
-      break;
-      
-      case 46: // delete
-        clearBuffer(pos.begin, pos.begin+1);
-        writeBuffer();
-        element.caret(Math.max(firstNonMaskPos, pos.begin));
-        return false;
-      break;
-
-      case 27: // escape
-        clearBuffer(0, mask.length);
-        writeBuffer();
-        element.caret(firstNonMaskPos);
-        return false;
-      break;
+        break;
+        
+        case 46: // delete
+          clearBuffer(pos.begin, pos.begin+1);
+          writeBuffer();
+          element.caret(Math.max(firstNonMaskPos, pos.begin));
+          return e.stop();
+        break;
+  
+        case 27: // escape
+          clearBuffer(0, mask.length);
+          writeBuffer();
+          element.caret(firstNonMaskPos);
+          return e.stop();
+        break;
       }
-      
-      return true;
     }
     keydownEvent = keydownEvent.bindAsEventListener(element);
     
@@ -698,12 +678,11 @@ Element.addMethods('input', {
         return (e.keyCode == 8) ? false : null;
       }
       
-      e = e || window.event;
       var k = getKeycode(e);
 
       if (e.ctrlKey || e.altKey || 
           (k == Event.KEY_TAB) || 
-          (k >= Event.KEY_PAGEDOWN && k <= Event.KEY_DOWN)) return true; //Ignore
+          (k >= Event.KEY_PAGEDOWN && k <= Event.KEY_DOWN)) return; //Ignore
       
       var pos = element.caret();
       
@@ -728,7 +707,7 @@ Element.addMethods('input', {
         }
       }
 
-      return false;
+      e.stop();
     }
     keypressEvent = keypressEvent.bindAsEventListener(element);
     
@@ -779,11 +758,11 @@ Element.addMethods('input', {
       return mask.length;
     }
     
-    element.observe("focus", focusEvent);
-    element.observe("blur",  checkVal);
-    element.observe("mask:check", checkVal);
-    element.onkeydown  = keydownEvent;
-    element.onkeypress = keypressEvent;
+    element.observe("focus", focusEvent)
+           .observe("blur",  checkVal)
+           .observe("mask:check", checkVal)
+           .observe("keydown", keydownEvent)
+           .observe("keypress", keypressEvent);
     
     //Paste events for IE and Mozilla thanks to Kristinn Sigmundsson
     if (Prototype.Browser.IE)
