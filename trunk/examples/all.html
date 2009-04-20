@@ -18,8 +18,13 @@ function main () {
   /*$("dom-1").insert(
     DIV({className: "super-div"}, "bah");
   );*/
- 
-  $$("input.slider").first().slider({step: 1, min: 0, max: 100, hideInput: false,showTicks: false, orientation: 'vertical', ticksPosition: 'both', tooltip: true});
+  
+  var form = $(document.forms['form-test']);
+  form.elements['slider-1'].slider({step: 1, max: 100, hideInput: false,showTicks: false, orientation: 'vertical', ticksPosition: 'both'});
+  form.elements['slider-2'].slider({step: 2, max: 10, hideInput: true, orientation: 'vertical', ticksPosition: 'right', tooltip: true});
+  form.elements['slider-3'].slider({step: 0.5, min: -20, max: 20, showTicks: true, orientation: 'horizontal', ticksPosition: 'bottom'});
+  
+  $A(form.elements['slider-4']).each(function(e){e.slider({step: 0.1, min: 0, max: 10, showTicks: false, tooltip: true, orientation: 'vertical', ticksPosition: 'both'})});
 }
 
 document.observe('dom:loaded', main);
@@ -73,16 +78,40 @@ document.observe('dom:loaded', main);
       </th>
       <td>
         <textarea name="textarea-test-1" id="textarea-test-1" style="display: block; width: 100%">blah</textarea>
-
       </td>
     </tr>
     <tr>
       <th>
         Slider :
-        <span class="description">Allows the user to resize every textarea, doesn't work on IE</span>
+        <span class="description">Vertical, horizontal, single, double or no ticks, tooltip... Works in IE</span>
       </th>
-      <td style="height: 200px;">
-        <input type="text" name="slider" value="25" class="slider" />
+      <td>
+        <table style="width: 100%;">
+          <tr>
+            <td style="height: 200px;"><input type="text" name="slider-1" value="25" /></td>
+            <td style="height: 200px;"><input type="text" name="slider-2" value="6" /></td>
+          </tr>
+          <tr>
+            <td colspan="2"><input type="text" name="slider-3" value="-15" /></td>
+          </tr>
+        </table>
+        
+        <table style="width: 100%;">
+          <tr>
+            <td style="height: 200px;"><input type="text" name="slider-4" value="5" /></td>
+            <td style="height: 200px;"><input type="text" name="slider-4" value="5" /></td>
+            <td style="height: 200px;"><input type="text" name="slider-4" value="5" /></td>
+            <td style="height: 200px;"><input type="text" name="slider-4" value="5" /></td>
+            <td style="height: 200px;"><input type="text" name="slider-4" value="5" /></td>
+            <td style="height: 200px;"><input type="text" name="slider-4" value="5" /></td>
+            <td style="height: 200px;"><input type="text" name="slider-4" value="5" /></td>
+            <td style="height: 200px;"><input type="text" name="slider-4" value="5" /></td>
+            <td style="height: 200px;"><input type="text" name="slider-4" value="5" /></td>
+            <td style="height: 200px;"><input type="text" name="slider-4" value="5" /></td>
+            <td style="height: 200px;"><input type="text" name="slider-4" value="5" /></td>
+            <td style="height: 200px;"><input type="text" name="slider-4" value="5" /></td>
+            <td style="height: 200px;"><input type="text" name="slider-4" value="5" /></td>
+          </tr>
       </td>
     </tr>
   </table>

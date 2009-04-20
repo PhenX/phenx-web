@@ -902,8 +902,9 @@ Element.addMethods('input', {
         element.grip.style[vertical ? 'top' : 'left'] = posStyle + 'px';
         
         // Tootip
-        element.tooltip.update(element.sliderValue).style[vertical ? 'top' : 'left'] = posStyle + 'px';
-        if (o.tooltip) element.tooltip.show();
+        if (o.tooltip) {
+          element.tooltip.show().update(element.sliderValue).style[vertical ? 'top' : 'left'] = posStyle + 'px';
+        }
       }
     }
     
