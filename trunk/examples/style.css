@@ -101,3 +101,153 @@ ul.select-tree .highlight {
 .super-div {
   border: 1px solid #f00;
 }
+
+.control.slider {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.control.slider.horizontal {
+  height: 18px;
+  width: 100%;
+}
+
+.control.slider.vertical {
+  width: 18px;
+  height: 100%;
+}
+
+/** Slider control */
+.control div.slider {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #ccc;
+  width: 100%;
+  height: 100%;
+}
+
+.control .tooltip {
+  position: absolute;
+  padding: 2px;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+
+.control.horizontal .tooltip {
+  top: -20px;
+}
+
+.control.vertical .tooltip {
+  left: -20px;
+}
+
+.control.horizontal div.slider {
+  height: 1px;
+  left: 5px;
+  right: 5px;
+  top: 7px;
+}
+
+.control.vertical div.slider {
+  width: 1px;
+  top: 5px;
+  bottom: 5px;
+  left: 7px;
+}
+
+/** Slider ticks */
+.control .ticks {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.control.horizontal .ticks {
+  border-left: 1px solid #999;
+  left: 5px;
+  right: 5px;
+  top: 50%;
+  height: 3px;
+}
+
+.control.horizontal.both .ticks {
+  top: 25%;
+  height: 7px;
+}
+
+.control.horizontal.top .ticks {
+  top: 25%;
+}
+
+.control.vertical .ticks {
+  border-top: 1px solid #999;
+  top: 5px;
+  bottom: 5px;
+  left: 50%;
+  width: 3px;
+}
+
+.control.vertical.both .ticks {
+  left: 25%;
+  width: 7px;
+}
+
+.control.vertical.left .ticks {
+  left: 25%;
+}
+
+.control .ticks div {
+  height: 100%;
+  width: 100%;
+  float: left;
+}
+
+.control.horizontal .ticks div {
+  border-right: 1px solid #999;
+  margin-left: -1px;
+}
+
+.control.vertical .ticks div {
+  border-bottom: 1px solid #999;
+  margin-top: -1px;
+}
+
+/** Slider grip */
+.control .grip {
+  position: absolute;
+  background-image: url(images/slider.png);
+  background-repeat: no-repeat;
+}
+
+.control .grip:hover {
+  background-image: url(images/slider-hover.png);
+}
+
+.control .grip {
+  width: 10px;
+  height: 18px;
+  background-position: 0px 0px;
+}
+
+.control.both .grip {
+  background-position: -10px 0px;
+}
+
+.control.top .grip {
+  background-position: -20px 0px;
+}
+
+.control.vertical .grip {
+  height: 10px;
+  width: 18px;
+  background-position: -31px 0px;
+}
+
+.control.vertical.both .grip {
+  background-position: -31px -10px;
+}
+
+.control.vertical.right .grip {
+  background-position: -31px -20px;
+}

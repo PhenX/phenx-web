@@ -793,5 +793,132 @@ Element.addMethods('input', {
       element.addEventListener("input", checkVal, false);
       
     checkVal();//Perform initial check for existing values
+  },
+  
+  slider: function(element, options) {
+    var i, o = element.options = Object.extend({
+      min: 0,
+      max: 10,
+      step: 1,
+      orientation: 'horizontal',
+      //rtl: true,
+      ticksPosition: 'bottom',
+      showTicks: true,
+      tooltip: false,
+      hideInput: true
+    }, options);
+    
+    element.sliderValue = parseFloat(element.getAttribute('value') || 0);
+    
+    if (o.hideInput) element.hide();
+    
+    element.insert({after: '<div class="control slider"><div class="slider"></div><a class="grip" href="#1" onclick="return false"></a><div class="tooltip"></div></div>'});
+    var c = element.container = element.next().addClassName(o.orientation).addClassName(o.ticksPosition);
+    
+    element.grip = c.select('.grip').first();
+    element.slider = c.select('div.slider').first();
+    element.tooltip = c.select('div.tooltip').first().hide();
+    
+    var ticksCount = Math.round((o.max - o.min) / o.step),
+        vertical = o.orientation == 'vertical';
+
+    if (o.showTicks) {
+      element.ticks = new Element('div', {className: 'ticks'});
+      element.slider.insert({before: element.ticks});
+      for (i = 0; i < ticksCount; i++) {
+        element.ticks.insert('<div style="'+[vertical ? 'height' : 'width']+':'+100/ticksCount+'%;"></div>');
+      }
+    }
+    
+    var staticOffset = 0,
+        sliderSize = 0;
+
+    function keyPressHandler(e) {
+      e.stop();
+      var key = getKeycode(e);
+      switch(key) {
+        // previous
+        case 37:
+        case 38:
+          setValue(Number(element.value) - o.step);
+        break;
+        
+        // next
+        case 39:
+        case 40:
+          setValue(Number(element.value) + o.step);
+        break;
+      }
+    }
+    
+    function inRange(value) {
+      return (value >= o.min && value <= o.max);
+    }
+    
+    function setValue(value) {
+      if (inRange(value)) {
+        $V(element, value);
+        updateGrip(value);
+      }
+    }
+    
+    function updateValue(pos) {
+      var tickOffset = sliderSize / ticksCount;
+      element.sliderValue = Math.round((Math.round(pos / tickOffset)) * o.step * 1e14) / 1e14 + o.min;
+      return ((element.sliderValue - o.min) * tickOffset) / o.step;
+    }
+    
+    function updateGrip(value) {
+      if (inRange(value)) {
+        element.sliderValue = value;
+        
+        var tickOffset = sliderSize / ticksCount,
+            posStyle = ((value - o.min) * tickOffset) / o.step;
+        
+        element.grip.style[vertical ? 'top' : 'left'] = posStyle + 'px';
+      }
+    }
+    
+    function updateDimensions() {
+      staticOffset = element.slider.cumulativeOffset();
+      sliderSize = element.slider.getDimensions()[vertical ? 'height' : 'width'];
+    }
+    
+    function mouseDownHandler(e) {
+      e.stop();
+      updateDimensions();
+      document.observe('mousemove', mouseMoveHandler);
+      document.observe('mouseup', mouseUpHandler);
+      element.grip.blur();
+    }
+    
+    function mouseMoveHandler(e) {
+      e.stop();
+      var pos = vertical ? (e.pointerY() - staticOffset.top) : (e.pointerX() - staticOffset.left);          
+          
+      if (pos >= 0 && pos <= sliderSize) {
+        var posStyle = updateValue(pos);
+        // Grip
+        element.grip.style[vertical ? 'top' : 'left'] = posStyle + 'px';
+        
+        // Tootip
+        element.tooltip.update(element.sliderValue).style[vertical ? 'top' : 'left'] = posStyle + 'px';
+        if (o.tooltip) element.tooltip.show();
+      }
+    }
+    
+    function mouseUpHandler(e) {
+      e.stop();
+      $V(element, element.sliderValue);
+      document.stopObserving('mousemove', mouseMoveHandler);
+      document.stopObserving('mouseup', mouseUpHandler);
+      element.tooltip.hide();
+      element.grip.focus();
+    }
+    
+    element.grip.observe('mousedown', mouseDownHandler);
+    element.grip.observe('keypress', keyPressHandler);
+    updateDimensions();
+    updateGrip(element.value);
   }
 });
