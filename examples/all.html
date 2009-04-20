@@ -18,6 +18,8 @@ function main () {
   /*$("dom-1").insert(
     DIV({className: "super-div"}, "bah");
   );*/
+ 
+  $$("input.slider").first().slider({step: 1, min: 0, max: 100, hideInput: false,showTicks: false, orientation: 'vertical', ticksPosition: 'both', tooltip: true});
 }
 
 document.observe('dom:loaded', main);
@@ -34,6 +36,7 @@ document.observe('dom:loaded', main);
         <span class="description">A simple input mask. Works on IE !</span>
       </th>
       <td>
+
         <input type="text" name="input-mask-1" id="input-mask-1" />a ~99 99 99 a*
         (a: letterk 9: digit, ~: + or -, *: anything)
       </td>
@@ -44,6 +47,7 @@ document.observe('dom:loaded', main);
         <span class="description">Builds a tree view of the Optgroups, doesn't work on IE</span>
       </th>
       <td>
+
         <select name="select-tree-1" class="select-tree">
           <option value="1">Option 1</option>
           <option value="2">Option 2</option>
@@ -51,6 +55,7 @@ document.observe('dom:loaded', main);
             <option value="1-1">Option 1 - 1</option>
             <option value="1-2">Option 1 - 2</option>
             <option value="1-3">Option 1 - 3</option>
+
           </optgroup>
           <optgroup label="Group 2">
             <option value="2-1">Option 2 - 1</option>
@@ -58,6 +63,7 @@ document.observe('dom:loaded', main);
             <option value="2-3">Option 2 - 3</option>
           </optgroup>
         </select>
+
       </td>
     </tr>
     <tr>
@@ -67,6 +73,16 @@ document.observe('dom:loaded', main);
       </th>
       <td>
         <textarea name="textarea-test-1" id="textarea-test-1" style="display: block; width: 100%">blah</textarea>
+
+      </td>
+    </tr>
+    <tr>
+      <th>
+        Slider :
+        <span class="description">Allows the user to resize every textarea, doesn't work on IE</span>
+      </th>
+      <td style="height: 200px;">
+        <input type="text" name="slider" value="25" class="slider" onchange="if (console) console.log(this.value)" />
       </td>
     </tr>
   </table>
