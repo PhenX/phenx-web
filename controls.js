@@ -1,4 +1,4 @@
-/*
+/**
  * Input Mask inspired from the Masked Input Plugin for jQuery by Josh Bush (digitalbush.com)
  * 
  * Permission is hereby granted, free of charge, to any person
@@ -20,14 +20,11 @@
  * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE. 
+ * 
+ * @version $Revision$
+ * @author Fabien Ménager
+ * @license MIT License, see http://www.opensource.org/licenses/mit-license.php
  */
- 
-/*
- * Version: 0.9
- * Release: 2008-08-26
- * Author: Fabien Ménager
- */ 
-
 
 function getKeycode(e) {
   return (window.event && (window.event.keyCode || window.event.which)) || e.which || e.keyCode || false;
@@ -188,8 +185,6 @@ Element.addMethods({
 
 Element.addMethods('select', {
   buildTree: function (element, options) {
-    //if (Prototype.Browser.IE) return;
-    
     var select  = element, // DOM select
         search  = null, // DOM text input
         tree    = null, // DOM UL/LI tree representing the select/optgroup
@@ -910,6 +905,8 @@ Element.addMethods('input', {
                 .observe('keypress', keyPressHandler);
                 
     element.container.observe('mousedown', mouseDownHandler);
+    
+    element.observe('change', function(){updateGrip(element.value)});
     
     updateDimensions();
     updateGrip(element.value);
