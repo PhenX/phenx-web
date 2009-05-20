@@ -5,12 +5,12 @@ Element.addMethods('area', {
 		
 		var i, str = [];
 		for(i = 0; i < coords.length; i++) {
-			str.push(Math.floor(coords[i][0]+origin[0])+','+Math.floor(coords[i][1]+origin[1]));
+			str.push(Math.floor(coords[i][0]+origin[0]), Math.floor(coords[i][1]+origin[1]));
 		}
 		
 		return element.writeAttribute({
-			'coords': str.join(','),
-			'shape': 'poly'
+			coords: str.join(','),
+			shape: 'poly'
 		});
 	}
 });
@@ -28,14 +28,14 @@ var $G = Prototype.Graphics = Class.create({
 		var dimensions = 'height:'+this.options.height+'px;width:'+this.options.width+'px;',
 		    style = 'position:absolute;top:0;left:0;margin:0;border:none;'+dimensions;
 
-		this.map      = new Element('map',{style:dimensions});
+		this.map      = $(document.createElement('map')).writeAttribute({style:dimensions});
 		this.map.name = this.map.identify();
-		this.img      = new Element('img',{style:style, usemap:'#'+this.map.name, src:'pix.gif'});
+		this.img      = $(document.createElement('img')).writeAttribute({style:style, usemap:'#'+this.map.name, src:'pix.gif', width:this.options.width, height:this.options.height});
 		this.img.onmousedown = this.img.onmouseup = this.img.onclick = function(){return false};
 		
-		this.element  = new Element('div',{height:this.options.height, width:this.options.width, style:'position:relative;'+dimensions, className:this.options.className});
+		this.element  = $(document.createElement('div')).writeAttribute({style:'position:relative;'+dimensions, className:this.options.className});
 		this.element.insert(this.img).insert(this.map);
-		
+
 		// add the first layer
 		this.addLayer(this);
 	},
@@ -219,7 +219,7 @@ $G.Shape = {
 		
 		constructArea: function(){
 			if (!this.area) {
-				this.area = new Element('area', {shape:'poly', style:'cursor:pointer;', href: '#1'});
+				this.area = new Element('area', {shape:'poly', style:'cursor:pointer;', href:'javascript:;'});
 				this.area.toPolyArea(this.calculatePoints(), this.origin);
 				this.area.onmousedown = this.area.onmouseup = this.area.onclick = function(){return false};
 				this.area.graphicShape = this;
@@ -394,7 +394,7 @@ Object.extend($G.Shape, {
 			ctx.restore();
 		}
 	}),
-	Oval: Class.create($G.Shape.Base, {}),
+	Ellipse: Class.create($G.Shape.Base, {}),
 	Text: Class.create($G.Shape.Base, {})
 });
 
