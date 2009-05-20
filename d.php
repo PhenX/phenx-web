@@ -17,4 +17,3 @@ foreach($options as $o){
 
 header("Content-Type: $mime; charset=$charset");
 echo $data;
-?>
