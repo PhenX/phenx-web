@@ -16,4 +16,5 @@ foreach($options as $o){
 }
 
 header("Content-Type: $mime; charset=$charset");
+header("Cache-Control: max-age=604800");
 echo $data;
