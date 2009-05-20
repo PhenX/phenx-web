@@ -48,6 +48,9 @@ if (!document.createElement('canvas').getContext) {
   var Z = 10;
   var Z2 = Z / 2;
 
+  // In IE8 standards mode we have to wrap the filter value in quotes.
+  var Q = document.documentMode >= 8 ? '"' : '';
+
   /**
    * This funtion is assigned to the <canvas> elements as element.getContext().
    * @this {HTMLElement}
@@ -81,14 +84,6 @@ if (!document.createElement('canvas').getContext) {
     return function() {
       return f.apply(obj, a.concat(slice.call(arguments)));
     };
-  };
-
-  function arrayContains(arr, item) {
-    var length = this.length;
-    for (var i = 0; i < length; i++) {
-      if (arr[i] === item) return true;
-    }
-    return false;
   }
 
   var G_vmlCanvasManager_ = {
@@ -120,7 +115,9 @@ if (!document.createElement('canvas').getContext) {
         ss.owningElement.id = 'ex_canvas_';
         ss.cssText = 'canvas{display:inline-block;overflow:hidden;' +
             // default size is 300x150 in Gecko and Opera
-            'text-align:left;width:300px;height:150px}';
+            'text-align:left;width:300px;height:150px}' +
+            'g_vml_\\:*{behavior:url(#default#VML)}' +
+            'g_o_\\:*{behavior:url(#default#VML)}';
       }
 
       // find all canvas elements
@@ -169,10 +166,7 @@ if (!document.createElement('canvas').getContext) {
         //el.getContext().setCoordsize_()
       }
       return el;
-    },
-
-    // Internal text style cache
-    fontStyleCache_: {}
+    }
   };
 
   function onPropertyChange(e) {
@@ -245,9 +239,6 @@ if (!document.createElement('canvas').getContext) {
     o2.shadowOffsetY = o1.shadowOffsetY;
     o2.strokeStyle   = o1.strokeStyle;
     o2.globalAlpha   = o1.globalAlpha;
-    o2.font          = o1.font;
-    o2.textAlign     = o1.textAlign;
-    o2.textBaseline  = o1.textBaseline;
     o2.arcScaleX_    = o1.arcScaleX_;
     o2.arcScaleY_    = o1.arcScaleY_;
     o2.lineScale_    = o1.lineScale_;
@@ -275,89 +266,6 @@ if (!document.createElement('canvas').getContext) {
     }
 
     return {color: str, alpha: alpha};
-  }
-
-  function processFontStyle (styleString) {
-    styleString = styleString.replace(/^\s*|\s*$/g, ''); // trim
-
-    if (G_vmlCanvasManager_.fontStyleCache_[styleString]) {
-      return G_vmlCanvasManager_.fontStyleCache_[styleString];
-    }
-
-    var lex = [], i, p, v, part;
-
-    // Default style
-    var style = {
-      style: 'normal',
-      variant: 'normal',
-      weight: 'normal',
-      size: 10,
-      family: 'sans-serif'
-    };
-
-    var possibleValues = {
-      weight: ['bold', 'bolder', 'lighter', '100', '200', '300', '400', '500',
-               '600', '700', '800', '900'],
-      style: ['italic', 'oblique'],
-      variant: ['small-caps']
-    }
-
-    var parts = styleString.match(/([\w\%-_]+|"[^"]+"|'[^']+')*/g);
-    for (i = 0; parts && i < parts.length; i++) {
-      part = parts[i].replace(/^["']|["']*$/, '');
-      if (part) lex.push(part);
-    }
-
-    style.family = lex.pop() || style.family;
-    style.size = lex.pop() || style.size;
-
-    for (p in possibleValues) {
-      v = possibleValues[p];
-      for (i = 0; v && i < v.length; i++) {
-        if (arrayContains(lex, v[i])) {
-          style[p] = v[i];
-          break;
-        }
-      }
-    }
-
-    return G_vmlCanvasManager_.fontStyleCache_[styleString] = style;
-  }
-
-  function getComputedStyle(style, element) {
-    var computedStyle = {};
-
-    for (var p in style) {
-      computedStyle[p] = style[p];
-    }
-
-    // Compute the size
-    var canvasFontSize = parseFloat(element.currentStyle.fontSize),
-        fontSize = parseFloat(style.size);
-
-    if (typeof style.size == 'number') {
-      computedStyle.size = style.size;
-    } else if (style.size.indexOf('px') != -1) {
-      computedStyle.size = parseFloat(style.size);
-    } else if (style.size.indexOf('em') != -1) {
-      computedStyle.size = canvasFontSize * fontSize;
-    } else if(style.size.indexOf('%') != -1) {
-      computedStyle.size = (canvasFontSize / 100) * fontSize;
-    } else if (style.size.indexOf('pt') != -1) {
-      computedStyle.size = canvasFontSize * (4/3) * fontSize;
-    } else {
-      computedStyle.size = canvasFontSize;
-    }
-
-    // Different scaling between normal text and VML text
-    computedStyle.size *= 0.981;
-
-    return computedStyle;
-  }
-
-  function buildStyle(style) {
-    return style.style + ' ' + style.variant + ' ' + style.weight + ' ' +
-        style.size + 'px \'' + style.family + '\'';
   }
 
   function processLineCap(lineCap) {
@@ -394,9 +302,6 @@ if (!document.createElement('canvas').getContext) {
     this.lineCap = 'butt';
     this.miterLimit = Z * 1;
     this.globalAlpha = 1;
-    this.font = '10px sans-serif';
-    this.textAlign = 'left';
-    this.textBaseline = 'alphabetic';
     this.canvas = surfaceElement;
 
     var el = surfaceElement.ownerDocument.createElement('div');
@@ -415,20 +320,20 @@ if (!document.createElement('canvas').getContext) {
   var contextPrototype = CanvasRenderingContext2D_.prototype;
   contextPrototype.clearRect = function() {
     this.element_.innerHTML = '';
-  }
+  };
 
   contextPrototype.beginPath = function() {
     // TODO: Branch current matrix so that save/restore has no effect
     //       as per safari docs.
     this.currentPath_ = [];
-  }
+  };
 
   contextPrototype.moveTo = function(aX, aY) {
     var p = this.getCoords_(aX, aY);
     this.currentPath_.push({type: 'moveTo', x: p.x, y: p.y});
     this.currentX_ = p.x;
     this.currentY_ = p.y;
-  }
+  };
 
   contextPrototype.lineTo = function(aX, aY) {
     var p = this.getCoords_(aX, aY);
@@ -436,7 +341,7 @@ if (!document.createElement('canvas').getContext) {
 
     this.currentX_ = p.x;
     this.currentY_ = p.y;
-  }
+  };
 
   contextPrototype.bezierCurveTo = function(aCP1x, aCP1y,
                                             aCP2x, aCP2y,
@@ -445,7 +350,7 @@ if (!document.createElement('canvas').getContext) {
     var cp1 = this.getCoords_(aCP1x, aCP1y);
     var cp2 = this.getCoords_(aCP2x, aCP2y);
     bezierCurveTo(this, cp1, cp2, p);
-  }
+  };
 
   // Helper function that takes the already fixed cordinates.
   function bezierCurveTo(self, cp1, cp2, p) {
@@ -658,8 +563,9 @@ if (!document.createElement('canvas').getContext) {
       max.y = m.max(max.y, c2.y, c3.y, c4.y);
 
       vmlStr.push('padding:0 ', mr(max.x / Z), 'px ', mr(max.y / Z),
-                  'px 0;filter:progid:DXImageTransform.Microsoft.Matrix(',
-                  filter.join(''), ", sizingmethod='clip');")
+                  'px 0;filter:', Q,
+                  'progid:DXImageTransform.Microsoft.Matrix(',
+                  filter.join(''), ", sizingmethod='clip')", Q, ';')
     } else {
       vmlStr.push('top:', mr(d.y / Z), 'px;left:', mr(d.x / Z), 'px;');
     }
@@ -667,7 +573,7 @@ if (!document.createElement('canvas').getContext) {
     vmlStr.push(' ">' ,
                 '<g_vml_:image src="', image.src, '"',
                 ' style="width:', Z * dw, 'px;',
-                ' height:', Z * dh, 'px;"',
+                ' height:', Z * dh, 'px"',
                 ' cropleft="', sx / w, '"',
                 ' croptop="', sy / h, '"',
                 ' cropright="', (w - sx - sw) / w, '"',
@@ -675,7 +581,7 @@ if (!document.createElement('canvas').getContext) {
                 ' />',
                 '</g_vml_:group>');
 
-    this.element_.insertAdjacentHTML('beforeEnd', vmlStr.join(''));
+    this.element_.insertAdjacentHTML('BeforeEnd', vmlStr.join(''));
   };
 
   contextPrototype.stroke = function(aFill) {
@@ -691,7 +597,8 @@ if (!document.createElement('canvas').getContext) {
     lineStr.push('<g_vml_:shape',
                  ' filled="', !!aFill, '"',
                  ' style="position:absolute;width:', W, 'px;height:', H, 'px;"',
-                 ' coordorigin="0 0" coordsize="', Z * W, ' ', Z * H, '"',
+                 ' coordorigin="0,0"',
+                 ' coordsize="', Z * W, ',', Z * H, '"',
                  ' stroked="', !aFill, '"',
                  ' path="');
 
@@ -878,7 +785,7 @@ if (!document.createElement('canvas').getContext) {
 
   contextPrototype.fill = function() {
     this.stroke(true);
-  };
+  }
 
   contextPrototype.closePath = function() {
     this.currentPath_.push({type: 'close'});
@@ -892,7 +799,7 @@ if (!document.createElement('canvas').getContext) {
     return {
       x: Z * (aX * m[0][0] + aY * m[1][0] + m[2][0]) - Z2,
       y: Z * (aX * m[0][1] + aY * m[1][1] + m[2][1]) - Z2
-    };
+    }
   };
 
   contextPrototype.save = function() {
@@ -904,14 +811,21 @@ if (!document.createElement('canvas').getContext) {
   };
 
   contextPrototype.restore = function() {
-    copyState(this.aStack_.pop(), this);
-    this.m_ = this.mStack_.pop();
+    if (this.aStack_.length) {
+      copyState(this.aStack_.pop(), this);
+      this.m_ = this.mStack_.pop();
+    }
   };
 
   function matrixIsFinite(m) {
-    return isFinite(m[0][0]) && isFinite(m[0][1]) &&
-        isFinite(m[1][0]) && isFinite(m[1][1]) &&
-        isFinite(m[2][0]) && isFinite(m[2][1]);
+    for (var j = 0; j < 3; j++) {
+      for (var k = 0; k < 2; k++) {
+        if (!isFinite(m[j][k]) || isNaN(m[j][k])) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
   function setM(ctx, m, updateLineScale) {
@@ -985,129 +899,6 @@ if (!document.createElement('canvas').getContext) {
     setM(this, m, true);
   };
 
-  /**
-   * The text deawing function.
-   * The maxWidth argument isn't taken in account, since no browser supports
-   * it yet.
-   */
-  contextPrototype.drawText_ = function(text, x, y, maxWidth, stroke) {
-    var a = processStyle(stroke ? this.strokeStyle : this.fillStyle),
-        color = a.color,
-        opacity = a.alpha * this.globalAlpha,
-
-        fontStyle = getComputedStyle(processFontStyle(this.font),
-                                     this.element_),
-        fontStyleString = buildStyle(fontStyle),
-        lineWidth = this.lineScale_ * this.lineWidth,
-
-        m = this.m_,
-        delta = 1000,
-        left = 0,
-        right = delta,
-        offset = {x: 0, y: 0},
-        lineStr = [],
-        style = '';
-
-    console.info(this.font)
-
-    if (lineWidth < 1) opacity *= lineWidth;
-
-    var elementStyle = this.element_.currentStyle,
-        textAlign = this.textAlign.match(/^(left|center|right)$/i) ?
-            this.textAlign :
-            (this.textAlign == 'end' && elementStyle.direction == 'ltr' ||
-             this.textAlign == 'start' && elementStyle.direction == 'rtl' ?
-                'right' : 'left');
-
-    // 1.75 is an arbitrary number, as there is no info about the text baseline
-    switch (this.textBaseline) {
-      case 'hanging':
-      case 'top':
-        offset.y = fontStyle.size / 1.75;
-        break;
-      case 'middle':
-        break;
-      default:
-      case null:
-      case 'alphabetic':
-      case 'ideographic':
-      case 'bottom':
-        offset.y = -fontStyle.size / 1.75;
-        break;
-    }
-
-    switch(textAlign) {
-      case 'right':
-        left = delta;
-        right = 0;
-        break;
-      case 'center':
-        left = right = delta / 2;
-        break;
-    }
-
-    var d = this.getCoords_(x + offset.x, y + offset.y),
-        Dx = mr(d.x / Z),
-        Dy = mr(d.y / Z);
-
-    var from = {x: mr(Dx - left * m[0][0]), y: mr(Dy - left * m[0][1])},
-        to = {x: mr(Dx + right * m[0][0]), y: mr(Dy + right * m[0][1])};
-
-    // Ugly hack to make IE draw the TextPath even if the line is horizontal or vertical
-    if (from.y == to.y) {
-      to.y += 0.05;
-    } else if (from.x == to.x) {
-      to.x += 0.05;
-    }
-
-    lineStr.push('<g_vml_:line from="', from.x, ' ', from.y, '" to="', to.x,
-                 ' ', to.y, '" filled="', !stroke, '" stroked="', !!stroke,
-                 '" style="position:absolute;', style, '">');
-
-    if (stroke) {
-      lineStr.push('<g_vml_:stroke on="true"',
-                   ' opacity="', opacity, '"',
-                   ' joinstyle="', this.lineJoin, '"',
-                   ' miterlimit="', this.miterLimit, '"',
-                   ' endcap="', processLineCap(this.lineCap), '"',
-                   ' weight="', lineWidth, 'px"',
-                   ' color="', color, '" />');
-    } else {
-      lineStr.push('<g_vml_:fill on="true" opacity="', opacity,
-                   '" color="', color, '" />');
-    }
-
-    lineStr.push('<g_vml_:path textpathok="true" />' +
-                 '<g_vml_:textpath on="true" string="', text,
-                 '" style="v-text-align:', textAlign, ';font:', fontStyleString,
-                 '" /></g_vml_:line>');
-
-    this.element_.insertAdjacentHTML('beforeEnd', lineStr.join(''));
-  };
-
-  contextPrototype.fillText = function(text, x, y, maxWidth) {
-    this.drawText_(text, x, y, maxWidth, false);
-  };
-
-  contextPrototype.strokeText = function(text, x, y, maxWidth) {
-    this.drawText_(text, x, y, maxWidth, true);
-  };
-
-  contextPrototype.measureText = function(text) {
-    if (!this.dummyDiv_) {
-      // We should also parse the font style, as it is done in the drawing methods
-      var dummyDiv = '<div style="position:absolute;display:inline;' +
-          'top:-20000;left:0;padding:0;margin:0;border:none;' +
-          'white-space:nowrap;font:' + this.font + '"></div>';
-      this.element_.insertAdjacentHTML('beforeEnd', dummyDiv);
-      this.dummyDiv_ = this.element_.lastChild;
-    }
-    var doc = this.element_.ownerDocument;
-    this.dummyDiv_.innerHTML = '';
-    this.dummyDiv_.appendChild(doc.createTextNode(text))
-    return {width: this.dummyDiv_.offsetWidth};
-  };
-
   /******** STUBS ********/
   contextPrototype.clip = function() {
     // TODO: Implement
@@ -1178,8 +969,7 @@ if (!document.createElement('canvas').getContext) {
   function DOMException_(s) {
     this.code = this[s];
     this.message = s +': DOM Exception ' + this.code;
-  }
-
+  };
   var p = DOMException_.prototype = new Error;
   p.INDEX_SIZE_ERR = 1;
   p.DOMSTRING_SIZE_ERR = 2;
@@ -1204,7 +994,8 @@ if (!document.createElement('canvas').getContext) {
   CanvasRenderingContext2D = CanvasRenderingContext2D_;
   CanvasGradient = CanvasGradient_;
   CanvasPattern = CanvasPattern_;
-  DOMException = DOMException_;
+  DOMException = DOMException_
+
 })();
 
 } // if
