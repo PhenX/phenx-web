@@ -40,7 +40,7 @@
 <?php
 $files = glob('./img/*');
 
-$i = isset($_GET['img']) ? intval($_GET['img']) : 100;
+$i = isset($_GET['img']) ? intval($_GET['img']) : 50;
 foreach($files as $file){
 	if (!$i--) break;
 	echo '<img  id="'.basename($file, '.png').'" src="data:image/png;base64,'.base64_encode(file_get_contents($file))."\" />\n";

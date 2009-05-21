@@ -17,17 +17,16 @@ function _process_datauri(debug){
 	var total = 0, i, j, k, ss, tag, list, d = document, o = window._ie_datauri || {},
 	
 	tags = {
-		img: 'src',
 		a: 'href',
+		img: 'src',
 		object: 'data',
 		link: 'href',
-		script: 'src',
-		bah: 'bah'
+		script: 'src'
 	},
 	styles = ['backgroundImage', 'cursor'];
 	
 	o.path = o.path || 'd.php';
-	
+		
 	// HTML tags
 	for (tag in tags) {
 		list = d.getElementsByTagName(tag);
