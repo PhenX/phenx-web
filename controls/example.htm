@@ -10,30 +10,24 @@
 <script type="text/javascript" src="controls.js"></script>
 
 <script type="text/javascript">
-function main () {
-  $$("select.select-tree").each(function (e) {e.buildTree()});
-  $("input-mask-1").mask("a ~99 99 99 a*");
-  $("textarea-test-1").setResizable();
-  
-  /*$("dom-1").insert(
-    DIV({className: "super-div"}, "bah");
-  );*/
-  
-  var form = $(document.forms['form-test']);
-  $(form.elements['slider-1']).slider({step: 1, max: 100, hideInput: false,showTicks: false, orientation: 'vertical', ticksPosition: 'both'});
-  $(form.elements['slider-2']).slider({step: 2, max: 10, hideInput: true, orientation: 'vertical', ticksPosition: 'right', tooltip: true});
-  $(form.elements['slider-3']).slider({step: 0.5, min: 0, max: 5, showTicks: true, tooltip: true, orientation: 'horizontal', ticksPosition: 'bottom', ticks: {'0': 'min', '5': 'max'}});
-  
-  $A(form.elements['slider-4']).each(function(e){$(e).slider({step: 0.1, min: 0, max: 10, showTicks: false, tooltip: true, orientation: 'vertical', ticksPosition: 'both'})});
-}
+document.observe('dom:loaded', function(){
+  var form = $(document.forms.test);
+  $(form.elements.selecttree).buildTree();
+  $(form.elements.inputmask).mask("a ~99 99 99 a*");
+  $(form.elements.textarea).setResizable();
 
-document.observe('dom:loaded', main);
+  $(form.elements.slider1).slider({step: 1, max: 100, hideInput: false,showTicks: false, orientation: 'vertical', ticksPosition: 'both'});
+  $(form.elements.slider2).slider({step: 2, max: 10, hideInput: true, orientation: 'vertical', ticksPosition: 'right', tooltip: true});
+  $(form.elements.slider3).slider({step: 0.5, min: 0, max: 5, showTicks: true, tooltip: true, orientation: 'horizontal', ticksPosition: 'bottom', ticks: {'0': 'min', '5': 'max'}});
+  
+  $A(form.elements['slider4[]']).each(function(e){$(e).slider({step: 0.1, min: 0, max: 10, showTicks: false, tooltip: true, orientation: 'vertical', ticksPosition: 'both'})});
+});
 </script>
 
 </head>
 <body>
 
-<form name="form-test" action="?" onsubmit="return false;" method="get">
+<form name="test" action="?" onsubmit="return false;" method="get">
   <table>
     <tr>
       <th>
@@ -42,7 +36,7 @@ document.observe('dom:loaded', main);
       </th>
       <td>
 
-        <input type="text" name="input-mask-1" id="input-mask-1" />a ~99 99 99 a*
+        <input type="text" name="inputmask" id="inputmask" />a ~99 99 99 a*
         (a: letterk 9: digit, ~: + or -, *: anything)
       </td>
     </tr>
@@ -53,7 +47,7 @@ document.observe('dom:loaded', main);
       </th>
       <td>
 
-        <select name="select-tree-1" class="select-tree">
+        <select name="selecttree" class="select-tree">
           <option value="1">Option 1</option>
           <option value="2">Option 2</option>
           <optgroup label="Group 1">
@@ -77,7 +71,7 @@ document.observe('dom:loaded', main);
         <span class="description">Allows the user to resize every textarea</span>
       </th>
       <td>
-        <textarea name="textarea-test-1" id="textarea-test-1" style="display: block; width: 100%">blah</textarea>
+        <textarea name="textarea" id="textarea" style="display: block; width: 100%">blah</textarea>
       </td>
     </tr>
     <tr>
@@ -88,29 +82,29 @@ document.observe('dom:loaded', main);
       <td>
         <table style="width: 100%;">
           <tr>
-            <td style="height: 100px;"><input type="text" name="slider-1" value="25" /></td>
-            <td style="height: 100px;"><input type="text" name="slider-2" value="6" /></td>
+            <td style="height: 100px;"><input type="text" name="slider1" value="25" /></td>
+            <td style="height: 100px;"><input type="text" name="slider2" value="6" /></td>
           </tr>
           <tr>
-            <td colspan="2"><input type="text" name="slider-3" value="-15" /></td>
+            <td colspan="2"><input type="text" name="slider3" value="-15" /></td>
           </tr>
         </table>
         
         <table style="width: 100%;">
           <tr>
-            <td style="height: 200px;"><input type="text" name="slider-4" value="5" /></td>
-            <td style="height: 200px;"><input type="text" name="slider-4" value="5" /></td>
-            <td style="height: 200px;"><input type="text" name="slider-4" value="5" /></td>
-            <td style="height: 200px;"><input type="text" name="slider-4" value="5" /></td>
-            <td style="height: 200px;"><input type="text" name="slider-4" value="5" /></td>
-            <td style="height: 200px;"><input type="text" name="slider-4" value="5" /></td>
-            <td style="height: 200px;"><input type="text" name="slider-4" value="5" /></td>
-            <td style="height: 200px;"><input type="text" name="slider-4" value="5" /></td>
-            <td style="height: 200px;"><input type="text" name="slider-4" value="5" /></td>
-            <td style="height: 200px;"><input type="text" name="slider-4" value="5" /></td>
-            <td style="height: 200px;"><input type="text" name="slider-4" value="5" /></td>
-            <td style="height: 200px;"><input type="text" name="slider-4" value="5" /></td>
-            <td style="height: 200px;"><input type="text" name="slider-4" value="5" /></td>
+            <td style="height: 200px;"><input type="text" name="slider4[]" value="5" /></td>
+            <td style="height: 200px;"><input type="text" name="slider4[]" value="5" /></td>
+            <td style="height: 200px;"><input type="text" name="slider4[]" value="5" /></td>
+            <td style="height: 200px;"><input type="text" name="slider4[]" value="5" /></td>
+            <td style="height: 200px;"><input type="text" name="slider4[]" value="5" /></td>
+            <td style="height: 200px;"><input type="text" name="slider4[]" value="5" /></td>
+            <td style="height: 200px;"><input type="text" name="slider4[]" value="5" /></td>
+            <td style="height: 200px;"><input type="text" name="slider4[]" value="5" /></td>
+            <td style="height: 200px;"><input type="text" name="slider4[]" value="5" /></td>
+            <td style="height: 200px;"><input type="text" name="slider4[]" value="5" /></td>
+            <td style="height: 200px;"><input type="text" name="slider4[]" value="5" /></td>
+            <td style="height: 200px;"><input type="text" name="slider4[]" value="5" /></td>
+            <td style="height: 200px;"><input type="text" name="slider4[]" value="5" /></td>
           </tr>
       </td>
     </tr>
