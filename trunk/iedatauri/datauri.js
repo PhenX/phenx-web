@@ -10,7 +10,7 @@ var _ie_datauri = {
     
   	if (o.debug) var start = new Date().getTime();
   	
-  	var i, j, k, ss, tag, list, d = document,
+  	var i, j, k, ss, d = document,
   	styles = ['backgroundImage', 'cursor'];
 
   	// Stylesheets

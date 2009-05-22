@@ -306,7 +306,7 @@ Element.addMethods('select', {
     });
     
     // Tree -------------
-    tree = new Element('ul', {"class": options.className, id: select.id+'_tree'});
+    tree = new Element('ul', {id: select.id+'_tree'}).addClassName(options.className);
     tree.display = function (e) {
       e.stop();
       if (tree.empty()) {
@@ -798,12 +798,12 @@ Element.addMethods('input', {
         vertical = o.orientation == 'vertical';
 
     if (o.showTicks) {
-      element.ticks = new Element('div', {className: 'ticks'});
+      element.ticks = new Element('div').addClassName('ticks');
       element.slider.insert({before: element.ticks});
       for (i = 0; i <= ticksCount; i++) {
         var v = o.ticks[o.min + (o.step * i)];
         element.ticks.insert('<div style="'+[vertical ? 'height' : 'width']+':'+(i == ticksCount ? 0 : (100/ticksCount))+'%;"><span>'+(Object.isUndefined(v)?'':v)+'</span></div>');
-        var label = element.ticks.lastChild.select('span').first(),
+        var label = $(element.ticks.lastChild).select('span').first(),
             style = {};
             style[vertical ? 'top' : 'left'] = -(label.getDimensions()[vertical ? 'height' : 'width']/2) + 'px';
         label.setStyle(style);
@@ -854,7 +854,6 @@ Element.addMethods('input', {
         
         var tickOffset = sliderSize / ticksCount,
             posStyle = ((value - o.min) * tickOffset) / o.step;
-        
         element.grip.style[vertical ? 'top' : 'left'] = posStyle + 'px';
       }
     }
