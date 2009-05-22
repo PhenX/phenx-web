@@ -5,7 +5,12 @@
 	<title>Data URI for IE6+</title>
   <!--[if lt IE 8]>
 		<script type="text/javascript" src="datauri.js"></script>
-		<script type="text/javascript" defer="defer">_process_datauri('benchmark')</script>
+		<script type="text/javascript" defer="defer">_ie_datauri.fixAll({debug:'benchmark'})</script>
+    <style>
+      img, script {behavior: expression(_ie_datauri.fixElement(this,'src'));}
+      a, link {behavior: expression(_ie_datauri.fixElement(this,'href'));}
+      object {behavior: expression(_ie_datauri.fixElement(this,'data'));}
+    </style>
 	<![endif]-->
 	<style type="text/css">
 		body {
